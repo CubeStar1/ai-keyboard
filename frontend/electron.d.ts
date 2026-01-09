@@ -5,6 +5,7 @@ declare global {
       replaceText: (text: string) => void;
       closeMenu: () => void;
       resizeWindow: (size: { width?: number; height?: number }) => void;
+      moveWindow: (delta: { x: number; y: number }) => void;
       openSettings: () => void;
     };
   }

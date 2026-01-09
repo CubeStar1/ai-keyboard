@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld("electron", {
   closeMenu: () => ipcRenderer.send("close-menu"),
   resizeWindow: (size: { width?: number; height?: number }) =>
     ipcRenderer.send("resize-window", size),
+  moveWindow: (delta: { x: number; y: number }) =>
+    ipcRenderer.send("move-window", delta),
   openSettings: () => ipcRenderer.send("open-settings"),
 });
 

@@ -159,6 +159,17 @@ app.whenReady().then(() => {
     });
   });
 
+  ipcMain.on("move-window", (_, { x, y }: { x: number; y: number }) => {
+    if (!mainWindow) return;
+    const currentBounds = mainWindow.getBounds();
+    mainWindow.setBounds({
+      x: currentBounds.x + x,
+      y: currentBounds.y + y,
+      width: currentBounds.width,
+      height: currentBounds.height,
+    });
+  });
+
   ipcMain.on("ping", () => console.log("pong"));
 
   app.on("activate", () => {

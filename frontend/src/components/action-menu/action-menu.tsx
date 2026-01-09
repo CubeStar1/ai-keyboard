@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTheme } from "next-themes";
 import { useCompletion } from "@ai-sdk/react";
 import { Action, ActionType } from "@/lib/ai/types";
 import { loadActions, getActionPrompt, getActionByShortcut } from "@/lib/ai/actions-store";
@@ -10,7 +11,7 @@ import { ResultPanel } from "./result-panel";
 import { ChatPanel } from "./chat-panel";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { Search, Settings } from "lucide-react";
+import { Search, Settings, Sun, Moon } from "lucide-react";
 
 interface ActionMenuProps {
   selectedText: string;
@@ -31,6 +32,7 @@ export function ActionMenu({
   const [showChatMode, setShowChatMode] = useState(false);
   const [allActions, setAllActions] = useState<Action[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { theme, setTheme } = useTheme();
 
   const { completion, complete, isLoading, setCompletion } = useCompletion({
     api: "/api/completion",
@@ -227,7 +229,7 @@ export function ActionMenu({
     <div className="flex h-full flex-col">
       <div className="px-3 py-3">
         <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
           <Input
             ref={inputRef}
             value={filter}
@@ -236,7 +238,7 @@ export function ActionMenu({
               setSelectedIndex(0);
             }}
             placeholder="Search actions"
-            className="border-0 p-0 h-auto text-sm bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/60"
+            className="border-none p-0 h-auto text-sm bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
           />
         </div>
       </div>
@@ -262,6 +264,12 @@ export function ActionMenu({
           >
             <Settings className="h-3.5 w-3.5" />
             <span>settings</span>
+          </button>
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
           </button>
         </div>
         <div className="flex items-center gap-4">
