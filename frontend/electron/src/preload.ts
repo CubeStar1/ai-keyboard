@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld("electron", {
   closeMenu: () => ipcRenderer.send("close-menu"),
   resizeWindow: (size: { width?: number; height?: number }) =>
     ipcRenderer.send("resize-window", size),
+  openSettings: () => ipcRenderer.send("open-settings"),
 });
 

@@ -1,6 +1,5 @@
 import { streamText, stepCountIs } from "ai";
 import { myProvider } from "@/lib/ai";
-import { getPromptForAction } from "@/lib/ai/prompts";
 import { ActionType } from "@/lib/ai/types";
 import { getMCPTools } from "@/lib/ai";
 import { tavilySearchTool } from "@/lib/ai/tools/tavily-search";
@@ -13,14 +12,15 @@ export async function POST(req: Request) {
     customPrompt?: string;
   };
 
-  console.log("API received:", { prompt: prompt?.slice(0, 50), action, customPrompt });
+  console.log("API received:", { prompt: prompt?.slice(0, 50), action, customPrompt: customPrompt?.slice(0, 50) });
 
   if (!prompt || !action) {
     return new Response("Missing prompt or action", { status: 400 });
   }
 
-  const systemPrompt = getPromptForAction(action, customPrompt);
-  const mcpTools = await getMCPTools()
+  const systemPrompt = customPrompt || "You are a helpful writing assistant. Transform the text as requested. Return ONLY the transformed text, no explanations.";
+  
+  const mcpTools = await getMCPTools();
 
   const result = streamText({
     model: myProvider.languageModel("gpt-4o-mini"),

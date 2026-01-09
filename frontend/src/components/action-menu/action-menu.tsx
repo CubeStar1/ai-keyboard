@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useCompletion } from "@ai-sdk/react";
-import { ACTIONS, Action, ActionType } from "@/lib/ai/types";
+import { Action, ActionType } from "@/lib/ai/types";
+import { loadActions, getActionPrompt, getActionByShortcut } from "@/lib/ai/actions-store";
 import { ActionList } from "./action-list";
-import { TextPreview } from "./text-preview";
+
 import { ResultPanel } from "./result-panel";
 import { ChatPanel } from "./chat-panel";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { Search } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 
 interface ActionMenuProps {
   selectedText: string;
@@ -28,6 +29,7 @@ export function ActionMenu({
   const [customPrompt, setCustomPrompt] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [showChatMode, setShowChatMode] = useState(false);
+  const [allActions, setAllActions] = useState<Action[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { completion, complete, isLoading, setCompletion } = useCompletion({
@@ -38,7 +40,11 @@ export function ActionMenu({
     },
   });
 
-  const filteredActions = ACTIONS.filter((action) =>
+  useEffect(() => {
+    setAllActions(loadActions());
+  }, []);
+
+  const filteredActions = allActions.filter((action) =>
     action.label.toLowerCase().includes(filter.toLowerCase())
   );
 
@@ -56,22 +62,26 @@ export function ActionMenu({
 
       setCurrentAction(action);
       setCompletion("");
+      
+      const prompt = getActionPrompt(action);
       await complete(selectedText, {
-        body: { action: action.id as ActionType },
+        body: { action: action.id as ActionType, customPrompt: prompt },
       });
     },
     [complete, selectedText, setCompletion]
   );
 
   const handleCustomSubmit = useCallback(async () => {
-    const action = ACTIONS.find((a) => a.id === "custom")!;
-    setCurrentAction(action);
+    const customAction = allActions.find((a) => a.id === "custom");
+    if (!customAction) return;
+    
+    setCurrentAction(customAction);
     setShowCustomInput(false);
     setCompletion("");
     await complete(selectedText, {
       body: { action: "custom" as ActionType, customPrompt },
     });
-  }, [complete, customPrompt, selectedText, setCompletion]);
+  }, [allActions, complete, customPrompt, selectedText, setCompletion]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(completion);
@@ -92,7 +102,6 @@ export function ActionMenu({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't handle escape here when in chat mode - ChatPanel handles it
       if (showChatMode) return;
 
       if (e.key === "Escape") {
@@ -118,6 +127,15 @@ export function ActionMenu({
         return;
       }
 
+      if (e.altKey && e.key.length === 1) {
+        const action = getActionByShortcut(allActions, e.key);
+        if (action) {
+          e.preventDefault();
+          handleActionSelect(action);
+          return;
+        }
+      }
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((prev) =>
@@ -136,6 +154,7 @@ export function ActionMenu({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
+    allActions,
     currentAction,
     showCustomInput,
     showChatMode,
@@ -153,7 +172,6 @@ export function ActionMenu({
     inputRef.current?.focus();
   }, []);
 
-  // Render Chat Mode
   if (showChatMode) {
     return (
       <ChatPanel
@@ -181,7 +199,6 @@ export function ActionMenu({
   if (showCustomInput) {
     return (
       <div className="flex h-full flex-col">
-        <TextPreview text={selectedText} />
         <div className="flex flex-1 flex-col gap-4 p-4">
           <label className="text-sm font-medium">Enter your instruction:</label>
           <textarea
@@ -208,21 +225,21 @@ export function ActionMenu({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b px-4 py-3">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input
-          ref={inputRef}
-          value={filter}
-          onChange={(e) => {
-            setFilter(e.target.value);
-            setSelectedIndex(0);
-          }}
-          placeholder="Start typing..."
-          className="border-0 p-0 text-sm focus-visible:ring-0"
-        />
+      <div className="px-3 py-3">
+        <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            ref={inputRef}
+            value={filter}
+            onChange={(e) => {
+              setFilter(e.target.value);
+              setSelectedIndex(0);
+            }}
+            placeholder="Search actions"
+            className="border-0 p-0 h-auto text-sm bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/60"
+          />
+        </div>
       </div>
-
-      <TextPreview text={selectedText} />
 
       <div className="flex-1 overflow-auto">
         <ActionList
@@ -233,16 +250,25 @@ export function ActionMenu({
         />
       </div>
 
-      <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Kbd>esc</Kbd>
-          <span>close</span>
+      <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Kbd>esc</Kbd>
+            <span>close</span>
+          </div>
+          <button
+            onClick={() => window.electron.openSettings()}
+            className="flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            <span>settings</span>
+          </button>
         </div>
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
+          <div className="flex items-center gap-1">
             <Kbd>↑</Kbd>
             <Kbd>↓</Kbd>
-          </span>
+          </div>
           <div className="flex items-center gap-2">
             <Kbd>↵</Kbd>
             <span>select</span>

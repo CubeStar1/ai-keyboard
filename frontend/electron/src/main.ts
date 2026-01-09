@@ -7,6 +7,7 @@ import { join } from "path";
 import { captureSelectedText, pasteToLastWindow } from "./text-handler";
 
 let mainWindow: BrowserWindow | null = null;
+let settingsWindow: BrowserWindow | null = null;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
@@ -104,11 +105,49 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.on("open-settings", () => {
+    if (settingsWindow) {
+      settingsWindow.focus();
+      return;
+    }
+
+    settingsWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      minWidth: 600,
+      minHeight: 500,
+      frame: true,
+      title: "TypoTab Settings",
+      webPreferences: {
+        preload: join(__dirname, "preload.js"),
+        nodeIntegration: true,
+      },
+    });
+
+    if (is.dev) {
+      settingsWindow.loadURL("http://localhost:3000/settings");
+    } else {
+
+      const loadSettings = async () => {
+         try {
+             const port = await startNextJSServer();
+             settingsWindow?.loadURL(`http://localhost:${port}/settings`);
+         } catch (e) {
+             console.error(e);
+         }
+      };
+      loadSettings();
+    }
+
+    settingsWindow.on("closed", () => {
+      settingsWindow = null;
+    });
+  });
+
   ipcMain.on("close-menu", () => {
     mainWindow?.hide();
   });
 
-  // Handle window resize requests (e.g., for chat mode)
   ipcMain.on("resize-window", (_, { width, height }: { width?: number; height?: number }) => {
     if (!mainWindow) return;
     const currentBounds = mainWindow.getBounds();

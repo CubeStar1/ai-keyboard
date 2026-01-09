@@ -7,26 +7,18 @@ export type ActionType =
   | "friendly-tone"
   | "email-writer"
   | "custom"
-  | "chat";
+  | "chat"
+  | string;
 
 export interface Action {
   id: ActionType;
   label: string;
   icon: string;
   description?: string;
+  prompt?: string;
+  shortcut?: string;
+  isDefault?: boolean;
 }
-
-export const ACTIONS: Action[] = [
-  { id: "chat", label: "Chat Mode", icon: "💬" },
-  { id: "fix-grammar", label: "Fix Grammar", icon: "✍️" },
-  { id: "shorten", label: "Shorten Text", icon: "✂️" },
-  { id: "expand", label: "Make Longer", icon: "📝" },
-  { id: "professional-tone", label: "Professional Tone", icon: "💼" },
-  { id: "casual-tone", label: "Casual Tone", icon: "😊" },
-  { id: "friendly-tone", label: "Friendly Tone", icon: "🤝" },
-  { id: "email-writer", label: "Write Email", icon: "📧" },
-  { id: "custom", label: "Custom Prompt", icon: "⚡" },
-];
 
 import { LanguageModelUsage } from 'ai'
 import { UsageData } from 'tokenlens/helpers'
