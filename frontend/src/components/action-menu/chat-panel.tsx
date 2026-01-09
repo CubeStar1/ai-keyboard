@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChatMessages } from "./chat-messages";
+import { ChatMessages } from "../chat/chat-messages";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { ArrowLeft, X, MessageSquare, History, Plus, Trash2 } from "lucide-react";
@@ -56,12 +56,10 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
       console.error("Chat error:", error);
     },
     onFinish: () => {
-      // Refresh conversations list after a message is completed
       loadConversations();
     },
   });
 
-  // Load conversations on mount
   const loadConversations = useCallback(async () => {
     try {
       const convs = await getConversations();
@@ -77,7 +75,6 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
     loadConversations();
   }, [loadConversations]);
 
-  // Handle switching to a conversation
   const handleSwitchChat = useCallback(
     async (conversationId: string) => {
       setActiveChatId(conversationId);
@@ -91,14 +88,12 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
     [setMessages]
   );
 
-  // Handle creating a new chat
   const handleNewChat = useCallback(() => {
     const newId = generateUUID();
     setActiveChatId(newId);
     setMessages([]);
   }, [setMessages]);
 
-  // Handle deleting a conversation
   const handleDeleteChat = useCallback(
     async (e: React.MouseEvent, conversationId: string) => {
       e.stopPropagation();
