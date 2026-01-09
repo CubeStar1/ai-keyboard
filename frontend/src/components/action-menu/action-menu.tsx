@@ -6,6 +6,7 @@ import { ACTIONS, Action, ActionType } from "@/lib/ai/types";
 import { ActionList } from "./action-list";
 import { TextPreview } from "./text-preview";
 import { ResultPanel } from "./result-panel";
+import { ChatPanel } from "./chat-panel";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { Search } from "lucide-react";
@@ -26,6 +27,7 @@ export function ActionMenu({
   const [currentAction, setCurrentAction] = useState<Action | null>(null);
   const [customPrompt, setCustomPrompt] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [showChatMode, setShowChatMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { completion, complete, isLoading, setCompletion } = useCompletion({
@@ -42,6 +44,11 @@ export function ActionMenu({
 
   const handleActionSelect = useCallback(
     async (action: Action) => {
+      if (action.id === "chat") {
+        setShowChatMode(true);
+        return;
+      }
+
       if (action.id === "custom") {
         setShowCustomInput(true);
         return;
@@ -80,10 +87,14 @@ export function ActionMenu({
     setCurrentAction(null);
     setCompletion("");
     setShowCustomInput(false);
+    setShowChatMode(false);
   }, [setCompletion]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle escape here when in chat mode - ChatPanel handles it
+      if (showChatMode) return;
+
       if (e.key === "Escape") {
         if (currentAction || showCustomInput) {
           handleBack();
@@ -127,6 +138,7 @@ export function ActionMenu({
   }, [
     currentAction,
     showCustomInput,
+    showChatMode,
     customPrompt,
     filteredActions,
     selectedIndex,
@@ -140,6 +152,17 @@ export function ActionMenu({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Render Chat Mode
+  if (showChatMode) {
+    return (
+      <ChatPanel
+        selectedText={selectedText}
+        onBack={handleBack}
+        onClose={onClose}
+      />
+    );
+  }
 
   if (currentAction) {
     return (

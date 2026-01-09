@@ -1,7 +1,9 @@
-import { streamText } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { myProvider } from "@/lib/ai";
 import { getPromptForAction } from "@/lib/ai/prompts";
 import { ActionType } from "@/lib/ai/types";
+import { getMCPTools } from "@/lib/ai";
+import { tavilySearchTool } from "@/lib/ai/tools/tavily-search";
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -18,11 +20,17 @@ export async function POST(req: Request) {
   }
 
   const systemPrompt = getPromptForAction(action, customPrompt);
+  const mcpTools = await getMCPTools()
 
   const result = streamText({
     model: myProvider.languageModel("gpt-4o-mini"),
     system: systemPrompt,
     prompt,
+    tools: {
+      tavilySearchTool,
+      ...mcpTools,
+    },
+    stopWhen: stepCountIs(20),
   });
 
   return result.toTextStreamResponse();

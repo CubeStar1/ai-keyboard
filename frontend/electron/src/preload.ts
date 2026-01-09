@@ -6,4 +6,7 @@ contextBridge.exposeInMainWorld("electron", {
   },
   replaceText: (text: string) => ipcRenderer.send("replace-text", text),
   closeMenu: () => ipcRenderer.send("close-menu"),
+  resizeWindow: (size: { width?: number; height?: number }) =>
+    ipcRenderer.send("resize-window", size),
 });
+

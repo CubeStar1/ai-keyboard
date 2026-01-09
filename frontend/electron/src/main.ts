@@ -11,12 +11,16 @@ let mainWindow: BrowserWindow | null = null;
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 500,
-    height: 400,
+    height: 500,
+    minWidth: 400,
+    minHeight: 400,
+    maxWidth: 800,
+    maxHeight: 800,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
-    resizable: false,
+    resizable: true,
     show: false,
     focusable: true,
     webPreferences: {
@@ -102,6 +106,18 @@ app.whenReady().then(() => {
 
   ipcMain.on("close-menu", () => {
     mainWindow?.hide();
+  });
+
+  // Handle window resize requests (e.g., for chat mode)
+  ipcMain.on("resize-window", (_, { width, height }: { width?: number; height?: number }) => {
+    if (!mainWindow) return;
+    const currentBounds = mainWindow.getBounds();
+    mainWindow.setBounds({
+      x: currentBounds.x,
+      y: currentBounds.y,
+      width: width ?? currentBounds.width,
+      height: height ?? currentBounds.height,
+    });
   });
 
   ipcMain.on("ping", () => console.log("pong"));
