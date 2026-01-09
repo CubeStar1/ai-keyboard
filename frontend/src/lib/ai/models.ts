@@ -41,5 +41,5 @@ export const models: Model[] = [
   },
 ]
 
-export const defaultModel = 'gemini-2.5-flash'
+export const defaultModel = 'gpt-4.1-mini'
 

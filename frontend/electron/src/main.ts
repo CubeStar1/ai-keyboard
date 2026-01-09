@@ -1,5 +1,5 @@
 import { is } from "@electron-toolkit/utils";
-import { app, BrowserWindow, globalShortcut, ipcMain } from "electron";
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, screen } from "electron";
 import { readFileSync } from "fs";
 import { getPort } from "get-port-please";
 import { startServer } from "next/dist/server/lib/start-server";
@@ -8,6 +8,13 @@ import { captureSelectedText, pasteToLastWindow } from "./text-handler";
 
 let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
+let suggestionWindow: BrowserWindow | null = null;
+let nextJSPort: number | null = null;
+
+let suggestionMode: "hotkey" | "auto" = "hotkey";
+let clipboardWatcher: NodeJS.Timeout | null = null;
+let lastClipboardContent = "";
+let isInternalClipboardOp = false;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
@@ -35,7 +42,7 @@ const createWindow = () => {
       mainWindow?.loadURL("http://localhost:3000");
     } else {
       try {
-        const port = await startNextJSServer();
+        const port = await getOrStartNextJSServer();
         console.log("Next.js server started on port:", port);
         mainWindow?.loadURL(`http://localhost:${port}`);
       } catch (error) {
@@ -48,9 +55,11 @@ const createWindow = () => {
   return mainWindow;
 };
 
-const startNextJSServer = async () => {
+const getOrStartNextJSServer = async () => {
+  if (nextJSPort) return nextJSPort;
+  
   try {
-    const nextJSPort = await getPort({ portRange: [30_011, 50_000] });
+    nextJSPort = await getPort({ portRange: [30_011, 50_000] });
     const webDir = join(app.getAppPath(), "app");
 
     const configFilePath = join(webDir, ".next", "required-server-files.json");
@@ -76,6 +85,96 @@ const startNextJSServer = async () => {
   }
 };
 
+
+
+const createSuggestionWindow = (initialContext: string) => {
+  if (suggestionWindow && !suggestionWindow.isDestroyed()) {
+    return suggestionWindow;
+  }
+
+  const cursorPoint = screen.getCursorScreenPoint();
+  
+  suggestionWindow = new BrowserWindow({
+    width: 420,
+    height: 150,
+    maxHeight: 300,
+    x: cursorPoint.x + 10,
+    y: cursorPoint.y + 10,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: true,
+    movable: true,
+    show: false,
+    focusable: true,
+    webPreferences: {
+      preload: join(__dirname, "preload.js"),
+      nodeIntegration: true,
+    },
+  });
+
+  if (is.dev) {
+    suggestionWindow.loadURL("http://localhost:3000/suggestion");
+  } else {
+    getOrStartNextJSServer().then((port) => {
+      suggestionWindow?.loadURL(`http://localhost:${port}/suggestion`);
+    });
+  }
+
+  suggestionWindow.on("closed", () => {
+    suggestionWindow = null;
+  });
+
+  return suggestionWindow;
+};
+
+const startClipboardWatcher = () => {
+  if (clipboardWatcher) return;
+  
+  lastClipboardContent = clipboard.readText();
+  
+  clipboardWatcher = setInterval(() => {
+    if (isInternalClipboardOp) return;
+    
+    const currentContent = clipboard.readText();
+    
+    if (currentContent !== lastClipboardContent && currentContent.length >= 5) {
+      lastClipboardContent = currentContent;
+      console.log("[Auto-suggest] Clipboard changed:", currentContent.slice(0, 50));
+      showSuggestionForContext(currentContent);
+    }
+  }, 500);
+  
+  console.log("[Auto-suggest] Clipboard watcher started");
+};
+
+const stopClipboardWatcher = () => {
+  if (clipboardWatcher) {
+    clearInterval(clipboardWatcher);
+    clipboardWatcher = null;
+    console.log("[Auto-suggest] Clipboard watcher stopped");
+  }
+};
+
+const showSuggestionForContext = async (context: string) => {
+  const window = createSuggestionWindow(context);
+  
+  const cursorPoint = screen.getCursorScreenPoint();
+  window.setPosition(cursorPoint.x + 10, cursorPoint.y + 10);
+  
+  if (!window.webContents.isLoading()) {
+    window.webContents.send("show-suggestion", { context });
+    window.show();
+  } else {
+    window.webContents.once("did-finish-load", async () => {
+      await new Promise((r) => setTimeout(r, 100));
+      window.webContents.send("show-suggestion", { context });
+      window.show();
+    });
+  }
+};
+
 app.whenReady().then(() => {
   createWindow();
 
@@ -97,15 +196,95 @@ app.whenReady().then(() => {
     }
   });
 
+  globalShortcut.register("CommandOrControl+Space", async () => {
+    try {
+      if (suggestionWindow && !suggestionWindow.isDestroyed() && suggestionWindow.isVisible()) {
+        suggestionWindow.hide();
+        return;
+      }
+      
+      const context = await captureSelectedText();
+      
+      if (context.length < 5) {
+        console.log("Context too short for suggestion");
+        return;
+      }
+
+      console.log("Suggestion requested, context:", context.slice(0, 50));
+      
+      const window = createSuggestionWindow(context);
+      
+      const cursorPoint = screen.getCursorScreenPoint();
+      window.setPosition(cursorPoint.x + 10, cursorPoint.y + 10);
+      
+      if (!window.webContents.isLoading()) {
+        window.webContents.send("show-suggestion", { context });
+        window.show();
+        window.focus();
+      } else {
+        window.webContents.once("did-finish-load", async () => {
+          await new Promise((r) => setTimeout(r, 100));
+          console.log("Sending show-suggestion IPC");
+          window.webContents.send("show-suggestion", { context });
+          window.show();
+          window.focus();
+        });
+      }
+    } catch (error) {
+      console.error("Error getting suggestion:", error);
+    }
+  });
+
   ipcMain.on("replace-text", async (_, text: string) => {
     try {
       console.log("Replace text requested:", text.slice(0, 50));
       mainWindow?.hide();
+      
+      isInternalClipboardOp = true;
       await new Promise((r) => setTimeout(r, 100));
       await pasteToLastWindow(text);
+      lastClipboardContent = clipboard.readText();
+      isInternalClipboardOp = false;
+      
       console.log("Paste completed");
     } catch (error) {
+      isInternalClipboardOp = false;
       console.error("Error replacing text:", error);
+    }
+  });
+
+  ipcMain.on("accept-suggestion", async (_, text: string) => {
+    try {
+      console.log("Accept suggestion:", text.slice(0, 50));
+      suggestionWindow?.hide();
+      
+      isInternalClipboardOp = true;
+      await new Promise((r) => setTimeout(r, 100));
+      await pasteToLastWindow(text);
+      lastClipboardContent = clipboard.readText();
+      isInternalClipboardOp = false;
+      
+      console.log("Suggestion pasted");
+    } catch (error) {
+      isInternalClipboardOp = false;
+      console.error("Error accepting suggestion:", error);
+    }
+  });
+
+  ipcMain.on("dismiss-suggestion", () => {
+    suggestionWindow?.hide();
+  });
+
+  ipcMain.handle("get-suggestion-mode", () => suggestionMode);
+  
+  ipcMain.on("set-suggestion-mode", (_, mode: "hotkey" | "auto") => {
+    console.log("[Settings] Suggestion mode changed to:", mode);
+    suggestionMode = mode;
+    
+    if (mode === "auto") {
+      startClipboardWatcher();
+    } else {
+      stopClipboardWatcher();
     }
   });
 
@@ -121,7 +300,7 @@ app.whenReady().then(() => {
       minWidth: 600,
       minHeight: 500,
       frame: true,
-      title: "TypoTab Settings",
+      title: "AI Keyboard Settings",
       webPreferences: {
         preload: join(__dirname, "preload.js"),
         nodeIntegration: true,
@@ -131,16 +310,9 @@ app.whenReady().then(() => {
     if (is.dev) {
       settingsWindow.loadURL("http://localhost:3000/settings");
     } else {
-
-      const loadSettings = async () => {
-         try {
-             const port = await startNextJSServer();
-             settingsWindow?.loadURL(`http://localhost:${port}/settings`);
-         } catch (e) {
-             console.error(e);
-         }
-      };
-      loadSettings();
+      getOrStartNextJSServer().then((port) => {
+        settingsWindow?.loadURL(`http://localhost:${port}/settings`);
+      });
     }
 
     settingsWindow.on("closed", () => {
