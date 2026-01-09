@@ -42,7 +42,7 @@ export function ResultPanel({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 px-4  h-[calc(100%-6rem)]">
+      <ScrollArea className="flex-1 px-4 pt-2 h-[calc(100%-6rem)]">
         {isLoading && !result ? (
           <div className="flex items-center justify-center py-8">
             <Spinner className="h-6 w-6" />

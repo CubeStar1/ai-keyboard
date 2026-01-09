@@ -82,14 +82,18 @@ app.whenReady().then(() => {
   globalShortcut.register("CommandOrControl+\\", async () => {
     if (!mainWindow) return;
 
-    try {
-      const selectedText = await captureSelectedText();
-      console.log("Captured text:", selectedText.slice(0, 50));
-      mainWindow.webContents.send("show-menu", selectedText);
-      mainWindow.show();
-      mainWindow.focus();
-    } catch (error) {
-      console.error("Error capturing text:", error);
+    if (mainWindow.isVisible()) {
+      mainWindow.hide();
+    } else {
+      try {
+        const selectedText = await captureSelectedText();
+        console.log("Captured text:", selectedText.slice(0, 50));
+        mainWindow.webContents.send("show-menu", selectedText);
+        mainWindow.show();
+        mainWindow.focus();
+      } catch (error) {
+        console.error("Error capturing text:", error);
+      }
     }
   });
 
