@@ -14,7 +14,7 @@ export function AboutTab() {
         Your intelligent writing assistant. Enhance your workflow with AI-powered text transformations and generation.
       </p>
       
-      <div className="pt-12 text-xs text-slate-400 dark:text-slate-600">
+      <div className="pt-12 text-xs text-zinc-400 dark:text-zinc-600">
         © 2026 AI Keyboard Team. All rights reserved.
       </div>
     </div>

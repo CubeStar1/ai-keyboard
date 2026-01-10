@@ -143,7 +143,7 @@ export function ActionsTab() {
 
   return (
     <div className="flex h-full">
-      <div className="w-64 border-r bg-slate-50/50 dark:bg-slate-900/50 flex flex-col">
+      <div className="w-64 border-r bg-zinc-50 dark:bg-zinc-900/50 flex flex-col">
         <ScrollArea className="flex-1 h-[calc(100%-8rem)]">
           <div className="p-3 space-y-1">
             {actions.map((action) => (
@@ -153,8 +153,8 @@ export function ActionsTab() {
                 className={cn(
                   "w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left",
                   selectedActionId === action.id
-                    ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-medium"
-                    : "hover:bg-slate-100 dark:hover:bg-slate-800/50 text-muted-foreground hover:text-foreground"
+                    ? "bg-white dark:bg-zinc-800 shadow-sm text-foreground font-medium"
+                    : "hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-muted-foreground hover:text-foreground"
                 )}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -168,7 +168,7 @@ export function ActionsTab() {
             ))}
           </div>
         </ScrollArea>
-        <div className="p-3 border-t bg-white/50 dark:bg-slate-900/50 space-y-2">
+        <div className="p-3 border-t bg-white/50 dark:bg-zinc-900/50 space-y-2">
           <Button
             onClick={handleCreateNew}
             variant="ghost"
@@ -286,7 +286,7 @@ export function ActionsTab() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 text-muted-foreground">
-            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-2">
+            <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mb-2">
               <Command className="w-8 h-8 opacity-50" />
             </div>
             <div>

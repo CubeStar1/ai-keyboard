@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -9,7 +10,7 @@ load_dotenv()
 
 app = FastAPI(
     title="Memory API",
-    description="API for mem0 memory operations",
+    description="API for mem0 memory operations with Supabase vector store",
     version="1.0.0"
 )
 
@@ -20,8 +21,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+supabase_connection_string = os.environ.get("SUPABASE_CONNECTION_STRING")
 
-memory = Memory()
+if not supabase_connection_string:
+    raise ValueError("SUPABASE_CONNECTION_STRING environment variable is required")
+
+supabase_config = {
+    "vector_store": {
+        "provider": "supabase",
+        "config": {
+            "connection_string": supabase_connection_string,
+            "collection_name": os.environ.get("SUPABASE_COLLECTION_NAME", "memories"),
+            "index_method": os.environ.get("SUPABASE_INDEX_METHOD", "hnsw"),
+            "index_measure": os.environ.get("SUPABASE_INDEX_MEASURE", "cosine_distance")
+        }
+    }
+}
+
+print("=" * 50)
+print("MEM0 CONFIGURATION:")
+print(f"  Vector Store Provider: {supabase_config['vector_store']['provider']}")
+print(f"  Collection Name: {supabase_config['vector_store']['config']['collection_name']}")
+print(f"  Connection String: {supabase_connection_string[:50]}..." if len(supabase_connection_string) > 50 else f"  Connection String: {supabase_connection_string}")
+print("=" * 50)
+
+memory = Memory.from_config(supabase_config)
 
 class Message(BaseModel):
     role: str

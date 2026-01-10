@@ -1,18 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useCompletion } from "@ai-sdk/react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Kbd } from "@/components/ui/kbd";
 import { Sparkles, Loader2 } from "lucide-react";
+import { ChatMessages } from "@/components/chat/chat-messages";
+import { generateUUID } from "@/lib/utils/generate-uuid";
 
 export default function SuggestionPage() {
-  const [context, setContext] = useState("");
   const lastContextRef = useRef<string>("");
   const isRequestingRef = useRef(false);
 
-  const { completion, complete, isLoading, setCompletion, stop } = useCompletion({
-    api: "/api/suggest",
-    streamProtocol: "text",
+  const { messages, status, sendMessage, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/suggest",
+    }),
+    generateId: () => generateUUID(),
     onError: (error) => {
       console.error("Suggestion error:", error);
       isRequestingRef.current = false;
@@ -33,19 +37,22 @@ export default function SuggestionPage() {
         return;
       }
       
-      if (isRequestingRef.current) {
-        stop();
-      }
-      
       lastContextRef.current = data.context;
       isRequestingRef.current = true;
-      setContext(data.context);
-      setCompletion("");
+      setMessages([]);
       
-      console.log("[Suggestion] Calling complete()");
-      complete(data.context, {
-        body: { context: data.context },
-      });
+      console.log("[Suggestion] Calling sendMessage()");
+      sendMessage(
+        { 
+          parts: [{ 
+            type: "text", 
+            text: `Complete this text naturally:\n\n${data.context}` 
+          }] 
+        },
+        {
+          body: { context: data.context },
+        }
+      );
     };
 
     const cleanup = window.electron?.onShowSuggestion?.(handleShowSuggestion);
@@ -55,14 +62,21 @@ export default function SuggestionPage() {
       console.log("[Suggestion] Cleaning up listener");
       cleanup?.();
     };
-  }, [complete, setCompletion, stop]);
+  }, [sendMessage, setMessages]);
 
-  // Keyboard shortcuts
+  const lastAssistantMessage = messages
+    .filter(m => m.role === "assistant")
+    .pop();
+  const completionText = lastAssistantMessage?.parts
+    ?.filter(p => p.type === "text")
+    .map(p => p.text)
+    .join("") || "";
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Tab" && completion) {
+      if (e.key === "Tab" && completionText) {
         e.preventDefault();
-        window.electron?.acceptSuggestion(completion);
+        window.electron?.acceptSuggestion(completionText);
       } else if (e.key === "Escape") {
         e.preventDefault();
         window.electron?.dismissSuggestion();
@@ -71,7 +85,9 @@ export default function SuggestionPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [completion]);
+  }, [completionText]);
+
+  const isLoading = status === "streaming" || status === "submitted";
 
   return (
     <div className="h-screen bg-transparent p-1.5 flex flex-col">
@@ -93,15 +109,16 @@ export default function SuggestionPage() {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              {isLoading && !completion ? (
+              {messages.length === 0 && isLoading ? (
                 <div className="space-y-2 pt-0.5">
                   <div className="animate-pulse h-3 bg-muted/60 rounded w-full" />
                   <div className="animate-pulse h-3 bg-muted/40 rounded w-3/4" />
                 </div>
               ) : (
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                  {completion || "Generating..."}
-                </p>
+                <ChatMessages 
+                  isLoading={isLoading} 
+                  messages={messages.filter(m => m.role === "assistant")} 
+                />
               )}
             </div>
           </div>
@@ -123,5 +140,3 @@ export default function SuggestionPage() {
     </div>
   );
 }
-
-
