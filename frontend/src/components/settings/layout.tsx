@@ -6,6 +6,7 @@ import { GeneralTab } from "./general-tab";
 import { ActionsTab } from "./actions-tab";
 import { AboutTab } from "./about-tab";
 import { MemoryTab } from "./memory-tab";
+import { GraphTab } from "./graph-tab";
 
 export function SettingsLayout() {
   return (
@@ -33,6 +34,12 @@ export function SettingsLayout() {
               Memory
             </TabsTrigger>
             <TabsTrigger 
+              value="graph" 
+              className="px-4 py-1.5 rounded-md text-sm font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all"
+            >
+              Graph
+            </TabsTrigger>
+            <TabsTrigger 
               value="about" 
               className="px-4 py-1.5 rounded-md text-sm font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all"
             >
@@ -50,6 +57,9 @@ export function SettingsLayout() {
           </TabsContent>
           <TabsContent value="memory" className="h-full mt-0 border-0 outline-none data-[state=inactive]:hidden">
             <MemoryTab />
+          </TabsContent>
+          <TabsContent value="graph" className="h-full mt-0 border-0 outline-none data-[state=inactive]:hidden">
+            <GraphTab />
           </TabsContent>
           <TabsContent value="about" className="h-full mt-0 border-0 outline-none data-[state=inactive]:hidden">
             <AboutTab />

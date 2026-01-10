@@ -22,11 +22,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 supabase_connection_string = os.environ.get("SUPABASE_CONNECTION_STRING")
+neo4j_url = os.environ.get("NEO4J_URL")
+neo4j_username = os.environ.get("NEO4J_USERNAME", "neo4j")
+neo4j_password = os.environ.get("NEO4J_PASSWORD")
 
 if not supabase_connection_string:
     raise ValueError("SUPABASE_CONNECTION_STRING environment variable is required")
 
-supabase_config = {
+config = {
     "vector_store": {
         "provider": "supabase",
         "config": {
@@ -38,14 +41,23 @@ supabase_config = {
     }
 }
 
+if neo4j_url and neo4j_password:
+    config["graph_store"] = {
+        "provider": "neo4j",
+        "config": {
+            "url": neo4j_url,
+            "username": neo4j_username,
+            "password": neo4j_password,
+        }
+    }
+
 print("=" * 50)
 print("MEM0 CONFIGURATION:")
-print(f"  Vector Store Provider: {supabase_config['vector_store']['provider']}")
-print(f"  Collection Name: {supabase_config['vector_store']['config']['collection_name']}")
-print(f"  Connection String: {supabase_connection_string[:50]}..." if len(supabase_connection_string) > 50 else f"  Connection String: {supabase_connection_string}")
+print(f"  Vector Store: supabase")
+print(f"  Graph Store: {'neo4j' if 'graph_store' in config else 'disabled'}")
 print("=" * 50)
 
-memory = Memory.from_config(supabase_config)
+memory = Memory.from_config(config)
 
 class Message(BaseModel):
     role: str

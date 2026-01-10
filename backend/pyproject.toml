@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "mem0ai>=1.0.1",
+    "mem0ai[graph]>=1.0.1",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.34.0",
     "python-dotenv>=1.0.0",
