@@ -182,6 +182,9 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      node-window-manager:
+        specifier: ^2.2.4
+        version: 2.2.4
       react:
         specifier: ^19.2.0
         version: 19.2.0
@@ -3611,6 +3614,9 @@ packages:
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
 
+  extract-file-icon@0.3.2:
+    resolution: {integrity: sha512-We5/HaMDlioOx3c9zDjit8RtKWEvT94sJF8jTujaKVOyWL8Kkqu4QGnwDr5fID6XsbKvWT0JJNuWuV2Tmr7yiw==}
+
   extract-zip@2.0.1:
     resolution: {integrity: sha512-GDhU9ntwuKyGXdZBUgTIe+vXnWj0fppUEtMDL0+idd5Sta8TGpHssn/eusA9mrPr9qNDym6SxAYZjNvCn/9RBg==}
     engines: {node: '>= 10.17.0'}
@@ -4919,8 +4925,14 @@ packages:
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
 
+  node-addon-api@1.7.1:
+    resolution: {integrity: sha512-2+DuKodWvwRTrCfKOeR24KIc5unKjOh8mz17NCzVnHWfjAdDqbfbjqh7gUT+BkXBRQM52+xCHciKWonJ3CbJMQ==}
+
   node-addon-api@1.7.2:
     resolution: {integrity: sha512-ibPK3iA+vaY1eEjESkQkM0BbCqFOaZMiXRTtdB0u7b4djtY6JnsjvPdUHVMg6xQt3B8fpTTWHI9A+ADjM9frzg==}
+
+  node-addon-api@2.0.0:
+    resolution: {integrity: sha512-ASCL5U13as7HhOExbT6OlWJJUV/lLzL2voOSP1UVehpRD8FbSrSDjfScK/KwAvVTI5AS6r4VwbOMlIqtvRidnA==}
 
   node-addon-api@5.0.0:
     resolution: {integrity: sha512-CvkDw2OEnme7ybCykJpVcKH+uAOLV2qLqiyla128dN9TkEWfrYmxG6C2boDe5KcNQqZF3orkqzGgOMvZ/JNekA==}
@@ -4937,9 +4949,16 @@ packages:
       encoding:
         optional: true
 
+  node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
+
   node-pid-controller@1.0.1:
     resolution: {integrity: sha512-36gdeRz2emhIsznLpXksJSqmR13NU3vR+rkRlfHWCGGlZu9fK+dcTPRpud0FiH6b2Nhwm0kbcVk7vXFlg8Sw1w==}
     engines: {node: '>= v4.0.0'}
+
+  node-window-manager@2.2.4:
+    resolution: {integrity: sha512-Dgq9a7qx6+Gi+BifWM79leteNz76QUtwSsdiqEe7SjvoJsc8TYQsRl1IA5uxqz5iSLeHS1iA/8YI/snoq0DblA==}
 
   nodemon@3.1.10:
     resolution: {integrity: sha512-WDjw3pJ0/0jMFmyNDp3gvY2YizjLmmOUQo6DEBY+JgdvW/yQ9mEeSw6H5ythl5Ny2ytb7f9C2nIbjSxMNzbJXw==}
@@ -10118,6 +10137,10 @@ snapshots:
 
   extend@3.0.2: {}
 
+  extract-file-icon@0.3.2:
+    dependencies:
+      node-addon-api: 1.7.1
+
   extract-zip@2.0.1:
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
@@ -11758,8 +11781,12 @@ snapshots:
 
   node-abort-controller@3.1.1: {}
 
+  node-addon-api@1.7.1: {}
+
   node-addon-api@1.7.2:
     optional: true
+
+  node-addon-api@2.0.0: {}
 
   node-addon-api@5.0.0:
     optional: true
@@ -11774,7 +11801,15 @@ snapshots:
     optionalDependencies:
       encoding: 0.1.13
 
+  node-gyp-build@4.8.4: {}
+
   node-pid-controller@1.0.1: {}
+
+  node-window-manager@2.2.4:
+    dependencies:
+      extract-file-icon: 0.3.2
+      node-addon-api: 2.0.0
+      node-gyp-build: 4.8.4
 
   nodemon@3.1.10:
     dependencies:

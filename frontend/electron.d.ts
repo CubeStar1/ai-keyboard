@@ -12,6 +12,8 @@ declare global {
       dismissSuggestion: () => void;
       getSuggestionMode: () => Promise<"hotkey" | "auto">;
       setSuggestionMode: (mode: "hotkey" | "auto") => void;
+      getTextOutputMode: () => Promise<"paste" | "typewriter">;
+      setTextOutputMode: (mode: "paste" | "typewriter") => void;
     };
   }
 }

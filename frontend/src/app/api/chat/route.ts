@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
-  // const mcpTools = await getMCPTools();
+  const mcpTools = await getMCPTools();
   const modelMessages = await convertToModelMessages(messages);
 
   const userMessage = messages[messages.length - 1];
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
           addMemory: addMemoryTool,
           searchMemory: searchMemoryTool,
           getAllMemories: getAllMemoriesTool,
-          // ...mcpTools,
+          ...mcpTools,
         },
         stopWhen: stepCountIs(20),
         onError: (error) => {

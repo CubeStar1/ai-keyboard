@@ -1,7 +1,20 @@
 import { keyboard, Key } from "@nut-tree-fork/nut-js";
 import { clipboard } from "electron";
+import { windowManager } from "node-window-manager";
 
-keyboard.config.autoDelayMs = 50;
+keyboard.config.autoDelayMs = 2;
+
+let lastActiveWindowId: number | null = null;
+
+export async function captureLastActiveWindow(): Promise<void> {
+  try {
+    const activeWindow = windowManager.getActiveWindow();
+    lastActiveWindowId = activeWindow?.id ?? null;
+    console.log("Captured window ID:", lastActiveWindowId);
+  } catch (error) {
+    console.error("Failed to capture active window:", error);
+  }
+}
 
 export async function captureSelectedText(): Promise<string> {
   const original = clipboard.readText();
@@ -19,23 +32,61 @@ export async function captureSelectedText(): Promise<string> {
   return selected;
 }
 
+async function restoreFocusToLastWindow(): Promise<boolean> {
+  if (lastActiveWindowId) {
+    const targetWindow = windowManager
+      .getWindows()
+      .find((w) => w.id === lastActiveWindowId);
+
+    if (targetWindow) {
+      targetWindow.bringToTop();
+      await new Promise((r) => setTimeout(r, 100));
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function pasteToLastWindow(text: string): Promise<void> {
-  clipboard.writeText(text);
-  
-  // Use Alt+Tab to switch back to previous window
-  await keyboard.pressKey(Key.LeftAlt);
-  await keyboard.pressKey(Key.Tab);
-  await keyboard.releaseKey(Key.Tab);
-  await keyboard.releaseKey(Key.LeftAlt);
-  
-  // Wait for window switch
-  await new Promise((r) => setTimeout(r, 150));
-  
-  // Now paste
-  await keyboard.pressKey(Key.LeftControl);
-  await keyboard.pressKey(Key.V);
-  await keyboard.releaseKey(Key.V);
-  await keyboard.releaseKey(Key.LeftControl);
-  
-  console.log("Pasted to previous window");
+  const originalClipboard = clipboard.readText();
+
+  try {
+    await restoreFocusToLastWindow();
+
+    // Write text to clipboard
+    clipboard.writeText(text);
+    await new Promise((r) => setTimeout(r, 50));
+
+    // Paste
+    await keyboard.pressKey(Key.LeftControl);
+    await keyboard.pressKey(Key.V);
+    await new Promise((r) => setTimeout(r, 30));
+    await keyboard.releaseKey(Key.V);
+    await keyboard.releaseKey(Key.LeftControl);
+
+    await new Promise((r) => setTimeout(r, 100));
+
+    console.log("Pasted to previous window");
+  } finally {
+    clipboard.writeText(originalClipboard);
+  }
+}
+
+export async function typeToLastWindow(text: string): Promise<void> {
+  await restoreFocusToLastWindow();
+  await keyboard.type(text);
+  console.log("Typed to previous window");
+}
+
+export type TextOutputMode = "paste" | "typewriter";
+
+export async function sendTextToLastWindow(
+  text: string,
+  mode: TextOutputMode = "paste"
+): Promise<void> {
+  if (mode === "typewriter") {
+    await typeToLastWindow(text);
+  } else {
+    await pasteToLastWindow(text);
+  }
 }

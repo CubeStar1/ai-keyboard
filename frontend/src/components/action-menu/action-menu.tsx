@@ -2,16 +2,17 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme } from "next-themes";
-import { useCompletion } from "@ai-sdk/react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Action, ActionType } from "@/lib/ai/types";
 import { loadActions, getActionPrompt, getActionByShortcut } from "@/lib/ai/actions-store";
 import { ActionList } from "./action-list";
-
 import { ResultPanel } from "./result-panel";
 import { ChatPanel } from "./chat-panel";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { Search, Settings, Sun, Moon } from "lucide-react";
+import { generateUUID } from "@/lib/utils/generate-uuid";
 
 interface ActionMenuProps {
   selectedText: string;
@@ -34,13 +35,26 @@ export function ActionMenu({
   const inputRef = useRef<HTMLInputElement>(null);
   const { theme, setTheme } = useTheme();
 
-  const { completion, complete, isLoading, setCompletion } = useCompletion({
-    api: "/api/completion",
-    streamProtocol: "text",
+  const { messages, status, sendMessage, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/completion",
+    }),
+    generateId: () => generateUUID(),
     onError: (error) => {
       console.error("Completion error:", error);
     },
   });
+
+  const isLoading = status === "streaming" || status === "submitted";
+
+  // Extract completion text from messages
+  const lastAssistantMessage = messages
+    .filter(m => m.role === "assistant")
+    .pop();
+  const completion = lastAssistantMessage?.parts
+    ?.filter(p => p.type === "text")
+    .map(p => p.text)
+    .join("") || "";
 
   useEffect(() => {
     setAllActions(loadActions());
@@ -63,14 +77,22 @@ export function ActionMenu({
       }
 
       setCurrentAction(action);
-      setCompletion("");
+      setMessages([]);
       
       const prompt = getActionPrompt(action);
-      await complete(selectedText, {
-        body: { action: action.id as ActionType, customPrompt: prompt },
-      });
+      sendMessage(
+        { 
+          parts: [{ 
+            type: "text", 
+            text: selectedText
+          }] 
+        },
+        {
+          body: { action: action.id as ActionType, customPrompt: prompt },
+        }
+      );
     },
-    [complete, selectedText, setCompletion]
+    [sendMessage, selectedText, setMessages]
   );
 
   const handleCustomSubmit = useCallback(async () => {
@@ -79,11 +101,19 @@ export function ActionMenu({
     
     setCurrentAction(customAction);
     setShowCustomInput(false);
-    setCompletion("");
-    await complete(selectedText, {
-      body: { action: "custom" as ActionType, customPrompt },
-    });
-  }, [allActions, complete, customPrompt, selectedText, setCompletion]);
+    setMessages([]);
+    sendMessage(
+      { 
+        parts: [{ 
+          type: "text", 
+          text: selectedText
+        }] 
+      },
+      {
+        body: { action: "custom" as ActionType, customPrompt },
+      }
+    );
+  }, [allActions, sendMessage, customPrompt, selectedText, setMessages]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(completion);
@@ -97,10 +127,10 @@ export function ActionMenu({
 
   const handleBack = useCallback(() => {
     setCurrentAction(null);
-    setCompletion("");
+    setMessages([]);
     setShowCustomInput(false);
     setShowChatMode(false);
-  }, [setCompletion]);
+  }, [setMessages]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -188,7 +218,7 @@ export function ActionMenu({
     return (
       <ResultPanel
         actionLabel={currentAction.label}
-        result={completion}
+        messages={messages.filter(m => m.role === "assistant")}
         isLoading={isLoading}
         onBack={handleBack}
         onClose={onClose}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Hand, Keyboard, Power, Sparkles } from "lucide-react";
+import { Check, Hand, Keyboard, Power, Sparkles, Type } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -11,18 +11,40 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
+const STORAGE_KEYS = {
+  SUGGESTION_MODE: "ai-keyboard-suggestion-mode",
+  TEXT_OUTPUT_MODE: "ai-keyboard-text-output-mode",
+};
+
 export function GeneralTab() {
   const [suggestionMode, setSuggestionMode] = useState<"hotkey" | "auto">("hotkey");
+  const [textOutputMode, setTextOutputMode] = useState<"paste" | "typewriter">("paste");
 
   useEffect(() => {
-    window.electron?.getSuggestionMode?.().then((mode) => {
-      if (mode) setSuggestionMode(mode);
-    });
+    const storedSuggestionMode = localStorage.getItem(STORAGE_KEYS.SUGGESTION_MODE) as "hotkey" | "auto" | null;
+    const storedTextOutputMode = localStorage.getItem(STORAGE_KEYS.TEXT_OUTPUT_MODE) as "paste" | "typewriter" | null;
+    
+    if (storedSuggestionMode) {
+      setSuggestionMode(storedSuggestionMode);
+      window.electron?.setSuggestionMode?.(storedSuggestionMode);
+    }
+    
+    if (storedTextOutputMode) {
+      setTextOutputMode(storedTextOutputMode);
+      window.electron?.setTextOutputMode?.(storedTextOutputMode);
+    }
   }, []);
 
   const handleModeChange = (mode: "hotkey" | "auto") => {
     setSuggestionMode(mode);
+    localStorage.setItem(STORAGE_KEYS.SUGGESTION_MODE, mode);
     window.electron?.setSuggestionMode?.(mode);
+  };
+
+  const handleTextOutputModeChange = (mode: "paste" | "typewriter") => {
+    setTextOutputMode(mode);
+    localStorage.setItem(STORAGE_KEYS.TEXT_OUTPUT_MODE, mode);
+    window.electron?.setTextOutputMode?.(mode);
   };
 
   return (
@@ -95,6 +117,36 @@ export function GeneralTab() {
             <SelectContent>
               <SelectItem value="hotkey">Hotkey only</SelectItem>
               <SelectItem value="auto">Auto-suggest</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </section>
+
+      <div className="h-px bg-border" />
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4">
+            <div className="mt-1">
+              <Type className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-base">Text Output Mode</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {textOutputMode === "paste" 
+                  ? "Text is pasted instantly from clipboard."
+                  : "Text is typed character by character for a cool effect."
+                }
+              </p>
+            </div>
+          </div>
+          <Select value={textOutputMode} onValueChange={(v) => handleTextOutputModeChange(v as "paste" | "typewriter")}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="paste">Instant paste</SelectItem>
+              <SelectItem value="typewriter">Typewriter</SelectItem>
             </SelectContent>
           </Select>
         </div>

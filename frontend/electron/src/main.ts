@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import { getPort } from "get-port-please";
 import { startServer } from "next/dist/server/lib/start-server";
 import { join } from "path";
-import { captureSelectedText, pasteToLastWindow } from "./text-handler";
+import { captureLastActiveWindow, captureSelectedText, sendTextToLastWindow, TextOutputMode } from "./text-handler";
 
 let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
@@ -12,6 +12,7 @@ let suggestionWindow: BrowserWindow | null = null;
 let nextJSPort: number | null = null;
 
 let suggestionMode: "hotkey" | "auto" = "hotkey";
+let textOutputMode: TextOutputMode = "paste";
 let clipboardWatcher: NodeJS.Timeout | null = null;
 let lastClipboardContent = "";
 let isInternalClipboardOp = false;
@@ -185,6 +186,7 @@ app.whenReady().then(() => {
       mainWindow.hide();
     } else {
       try {
+        await captureLastActiveWindow();
         const selectedText = await captureSelectedText();
         console.log("Captured text:", selectedText.slice(0, 50));
         mainWindow.webContents.send("show-menu", selectedText);
@@ -203,6 +205,7 @@ app.whenReady().then(() => {
         return;
       }
       
+      await captureLastActiveWindow();
       const context = await captureSelectedText();
       
       if (context.length < 5) {
@@ -242,7 +245,7 @@ app.whenReady().then(() => {
       
       isInternalClipboardOp = true;
       await new Promise((r) => setTimeout(r, 100));
-      await pasteToLastWindow(text);
+      await sendTextToLastWindow(text, textOutputMode);
       lastClipboardContent = clipboard.readText();
       isInternalClipboardOp = false;
       
@@ -260,7 +263,7 @@ app.whenReady().then(() => {
       
       isInternalClipboardOp = true;
       await new Promise((r) => setTimeout(r, 100));
-      await pasteToLastWindow(text);
+      await sendTextToLastWindow(text, textOutputMode);
       lastClipboardContent = clipboard.readText();
       isInternalClipboardOp = false;
       
@@ -286,6 +289,13 @@ app.whenReady().then(() => {
     } else {
       stopClipboardWatcher();
     }
+  });
+
+  ipcMain.handle("get-text-output-mode", () => textOutputMode);
+  
+  ipcMain.on("set-text-output-mode", (_, mode: TextOutputMode) => {
+    console.log("[Settings] Text output mode changed to:", mode);
+    textOutputMode = mode;
   });
 
   ipcMain.on("open-settings", () => {

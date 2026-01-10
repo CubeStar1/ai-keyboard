@@ -24,4 +24,7 @@ contextBridge.exposeInMainWorld("electron", {
   
   getSuggestionMode: () => ipcRenderer.invoke("get-suggestion-mode"),
   setSuggestionMode: (mode: "hotkey" | "auto") => ipcRenderer.send("set-suggestion-mode", mode),
+  
+  getTextOutputMode: () => ipcRenderer.invoke("get-text-output-mode"),
+  setTextOutputMode: (mode: "paste" | "typewriter") => ipcRenderer.send("set-text-output-mode", mode),
 });

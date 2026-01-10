@@ -1,15 +1,16 @@
 "use client";
 
+import { UIMessage } from "ai";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
-import { MessageResponse } from "@/components/ai-elements/message";
+import { ChatMessages } from "@/components/chat/chat-messages";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Copy, X } from "lucide-react";
 
 interface ResultPanelProps {
   actionLabel: string;
-  result: string;
+  messages: UIMessage[];
   isLoading: boolean;
   onBack: () => void;
   onClose: () => void;
@@ -19,7 +20,7 @@ interface ResultPanelProps {
 
 export function ResultPanel({
   actionLabel,
-  result,
+  messages,
   isLoading,
   onBack,
   onClose,
@@ -43,12 +44,12 @@ export function ResultPanel({
       </div>
 
       <ScrollArea className="flex-1 px-4 pt-2 h-[calc(100%-6rem)]">
-        {isLoading && !result ? (
+        {isLoading && messages.length === 0 ? (
           <div className="flex items-center justify-center py-8">
             <Spinner className="h-6 w-6" />
           </div>
         ) : (
-          <MessageResponse className="text-sm">{result}</MessageResponse>
+          <ChatMessages isLoading={isLoading} messages={messages} />
         )}
       </ScrollArea>
 

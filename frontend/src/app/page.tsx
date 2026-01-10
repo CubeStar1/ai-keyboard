@@ -9,6 +9,20 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.electron) {
+      const storedTextOutputMode = localStorage.getItem("ai-keyboard-text-output-mode") as "paste" | "typewriter" | null;
+      const storedSuggestionMode = localStorage.getItem("ai-keyboard-suggestion-mode") as "hotkey" | "auto" | null;
+      
+      if (storedTextOutputMode) {
+        window.electron.setTextOutputMode?.(storedTextOutputMode);
+      }
+      if (storedSuggestionMode) {
+        window.electron.setSuggestionMode?.(storedSuggestionMode);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.electron) {
       window.electron.onShowMenu((text) => {
         setSelectedText(text);
         setIsOpen(true);
