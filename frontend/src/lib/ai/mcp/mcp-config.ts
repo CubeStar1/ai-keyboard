@@ -7,6 +7,6 @@ export interface MCPServerConfig {
 export const MCP_SERVERS: MCPServerConfig[] = [
   {
     name: 'windows-mcp',
-    url: 'http://localhost:8000/mcp'
+    url: 'http://localhost:8001/mcp'
   },
 ]

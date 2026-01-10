@@ -20,7 +20,7 @@
     "next:lint": "eslint",
     "next:start": "next start",
     "postinstall": "electron-builder install-app-deps",
-    "windows-mcp": "uvx windows-mcp --transport streamable-http",
+    "windows-mcp": "uvx windows-mcp --transport streamable-http --port 8001",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
