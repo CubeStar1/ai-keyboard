@@ -14,6 +14,14 @@ declare global {
       setSuggestionMode: (mode: "hotkey" | "auto") => void;
       getTextOutputMode: () => Promise<"paste" | "typewriter">;
       setTextOutputMode: (mode: "paste" | "typewriter") => void;
+      toggleBrainPanel: () => void;
+      setBrainPanelCollapsed: (collapsed: boolean) => void;
+      onMemoryStored: (callback: (memory: string) => void) => () => void;
+      onCaptureStatusChanged: (callback: (enabled: boolean) => void) => () => void;
+      getContextCaptureEnabled: () => Promise<boolean>;
+      setContextCaptureEnabled: (enabled: boolean) => void;
+      onAnalyzeScreenshot: (callback: (data: { dataUrl: string; timestamp: string }) => void) => () => void;
+      notifyAnalysisComplete: (success: boolean) => void;
     };
   }
 }

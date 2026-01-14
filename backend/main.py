@@ -30,6 +30,13 @@ if not supabase_connection_string:
     raise ValueError("SUPABASE_CONNECTION_STRING environment variable is required")
 
 config = {
+    "llm": {
+    "provider": "openai",
+    "config": {
+        "model": "gpt-4.1-nano-2025-04-14",
+        "enable_vision": True,
+        }
+    },
     "vector_store": {
         "provider": "supabase",
         "config": {
@@ -89,6 +96,13 @@ class GetAllMemoriesRequest(BaseModel):
     user_id: str
 
 
+class AddImageMemoryRequest(BaseModel):
+    image_url: str
+    context: Optional[str] = None
+    user_id: str
+    metadata: Optional[dict] = None
+
+
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -132,13 +146,43 @@ async def search_memory(request: SearchMemoryRequest):
 
 @app.post("/memory/get_all")
 async def get_all_memories(request: GetAllMemoriesRequest):
-    """
-    Get all memories for a specific user.
-    """
     try:
         memories = memory.get_all(user_id=request.user_id)
         return {"success": True, "memories": memories}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/memory/add_image")
+async def add_image_memory(request: AddImageMemoryRequest):
+    try:
+        messages = []
+        
+        if request.context:
+            messages.append({"role": "user", "content": request.context})
+        
+        messages.append({
+            "role": "user",
+            "content": {
+                "type": "image_url",
+                "image_url": {"url": request.image_url}
+            }
+        })
+        
+        print(f"[add_image] Processing image URL: {request.image_url[:100]}...")
+        print(f"[add_image] Messages: {messages}")
+        
+        result = memory.add(
+            messages,
+            user_id=request.user_id,
+            metadata=request.metadata or {"source": "screen_capture"}
+        )
+        print(f"[add_image] Result: {result}")
+        return {"success": True, "result": result}
+    except Exception as e:
+        print(f"[add_image] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -204,4 +248,4 @@ async def get_memory_history(memory_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

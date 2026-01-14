@@ -5,11 +5,14 @@ import { getPort } from "get-port-please";
 import { startServer } from "next/dist/server/lib/start-server";
 import { join } from "path";
 import { captureLastActiveWindow, captureSelectedText, sendTextToLastWindow, TextOutputMode } from "./text-handler";
+import { ContextCaptureService } from "./context-capture";
 
 let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 let suggestionWindow: BrowserWindow | null = null;
+let brainPanelWindow: BrowserWindow | null = null;
 let nextJSPort: number | null = null;
+let contextCaptureService: ContextCaptureService | null = null;
 
 let suggestionMode: "hotkey" | "auto" = "hotkey";
 let textOutputMode: TextOutputMode = "paste";
@@ -130,6 +133,51 @@ const createSuggestionWindow = (initialContext: string) => {
   return suggestionWindow;
 };
 
+const createBrainPanelWindow = () => {
+  if (brainPanelWindow && !brainPanelWindow.isDestroyed()) {
+    return brainPanelWindow;
+  }
+
+  const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+
+  brainPanelWindow = new BrowserWindow({
+    width: 320,
+    height: 400,
+    x: screenWidth - 340,
+    y: 20,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    movable: true,
+    show: false,
+    focusable: true,
+    webPreferences: {
+      preload: join(__dirname, "preload.js"),
+      nodeIntegration: true,
+    },
+  });
+
+  if (is.dev) {
+    brainPanelWindow.loadURL("http://localhost:3000/brain-panel");
+  } else {
+    getOrStartNextJSServer().then((port) => {
+      brainPanelWindow?.loadURL(`http://localhost:${port}/brain-panel`);
+    });
+  }
+
+  brainPanelWindow.webContents.once("did-finish-load", () => {
+    contextCaptureService?.setRendererWindow(brainPanelWindow!);
+  });
+
+  brainPanelWindow.on("closed", () => {
+    brainPanelWindow = null;
+  });
+
+  return brainPanelWindow;
+};
+
 const startClipboardWatcher = () => {
   if (clipboardWatcher) return;
   
@@ -178,6 +226,13 @@ const showSuggestionForContext = async (context: string) => {
 
 app.whenReady().then(() => {
   createWindow();
+
+  contextCaptureService = new ContextCaptureService();
+  contextCaptureService.onMemoryStored((memory) => {
+    if (brainPanelWindow && !brainPanelWindow.isDestroyed()) {
+      brainPanelWindow.webContents.send("memory-stored", memory);
+    }
+  });
 
   globalShortcut.register("CommandOrControl+\\", async () => {
     if (!mainWindow) return;
@@ -235,6 +290,17 @@ app.whenReady().then(() => {
       }
     } catch (error) {
       console.error("Error getting suggestion:", error);
+    }
+  });
+
+  globalShortcut.register("CommandOrControl+Shift+B", () => {
+    if (!brainPanelWindow || brainPanelWindow.isDestroyed()) {
+      const window = createBrainPanelWindow();
+      window.show();
+    } else if (brainPanelWindow.isVisible()) {
+      brainPanelWindow.hide();
+    } else {
+      brainPanelWindow.show();
     }
   });
 
@@ -296,6 +362,37 @@ app.whenReady().then(() => {
   ipcMain.on("set-text-output-mode", (_, mode: TextOutputMode) => {
     console.log("[Settings] Text output mode changed to:", mode);
     textOutputMode = mode;
+  });
+
+  ipcMain.handle("get-context-capture-enabled", () => {
+    return contextCaptureService?.isEnabled() ?? false;
+  });
+
+  ipcMain.on("set-context-capture-enabled", (_, enabled: boolean) => {
+    contextCaptureService?.updateConfig({ enabled });
+    if (brainPanelWindow && !brainPanelWindow.isDestroyed()) {
+      brainPanelWindow.webContents.send("capture-status-changed", enabled);
+    }
+  });
+
+  ipcMain.on("toggle-brain-panel", () => {
+    if (brainPanelWindow?.isVisible()) {
+      brainPanelWindow.hide();
+    } else {
+      const window = createBrainPanelWindow();
+      window.show();
+    }
+  });
+
+  ipcMain.on("set-brain-panel-collapsed", (_, collapsed: boolean) => {
+    if (brainPanelWindow) {
+      const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+      if (collapsed) {
+        brainPanelWindow.setBounds({ width: 60, height: 60, x: screenWidth - 80, y: 20 });
+      } else {
+        brainPanelWindow.setBounds({ width: 320, height: 400, x: screenWidth - 340, y: 20 });
+      }
+    }
   });
 
   ipcMain.on("open-settings", () => {

@@ -27,4 +27,32 @@ contextBridge.exposeInMainWorld("electron", {
   
   getTextOutputMode: () => ipcRenderer.invoke("get-text-output-mode"),
   setTextOutputMode: (mode: "paste" | "typewriter") => ipcRenderer.send("set-text-output-mode", mode),
+
+  toggleBrainPanel: () => ipcRenderer.send("toggle-brain-panel"),
+  setBrainPanelCollapsed: (collapsed: boolean) =>
+    ipcRenderer.send("set-brain-panel-collapsed", collapsed),
+  
+  onMemoryStored: (callback: (memory: string) => void) => {
+    const handler = (_: IpcRendererEvent, memory: string) => callback(memory);
+    ipcRenderer.on("memory-stored", handler);
+    return () => ipcRenderer.removeListener("memory-stored", handler);
+  },
+  
+  onCaptureStatusChanged: (callback: (enabled: boolean) => void) => {
+    const handler = (_: IpcRendererEvent, enabled: boolean) => callback(enabled);
+    ipcRenderer.on("capture-status-changed", handler);
+    return () => ipcRenderer.removeListener("capture-status-changed", handler);
+  },
+
+  getContextCaptureEnabled: () => ipcRenderer.invoke("get-context-capture-enabled"),
+  setContextCaptureEnabled: (enabled: boolean) =>
+    ipcRenderer.send("set-context-capture-enabled", enabled),
+
+  onAnalyzeScreenshot: (callback: (data: { dataUrl: string; timestamp: string }) => void) => {
+    const handler = (_: IpcRendererEvent, data: { dataUrl: string; timestamp: string }) => callback(data);
+    ipcRenderer.on("analyze-screenshot", handler);
+    return () => ipcRenderer.removeListener("analyze-screenshot", handler);
+  },
+  notifyAnalysisComplete: (success: boolean) =>
+    ipcRenderer.send("analysis-complete", success),
 });

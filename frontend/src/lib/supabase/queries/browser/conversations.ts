@@ -1,5 +1,5 @@
 import { createSupabaseBrowser } from '../../client'
-import { Conversation } from '@/app/chat/types'
+import { Conversation } from '@/lib/ai/types'
 
 export async function fetchConversationsBrowser(userId: string): Promise<Conversation[]> {
   const supabase = createSupabaseBrowser()
