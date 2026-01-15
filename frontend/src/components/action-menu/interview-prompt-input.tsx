@@ -2,11 +2,11 @@
 
 import { useState, useRef, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InterviewPromptInputProps {
-  onSubmit: (prompt: string) => void;
+  onSubmit: (prompt: string, includeScreenshot: boolean) => void;
   disabled?: boolean;
   placeholder?: string;
   className?: string;
@@ -15,14 +15,16 @@ interface InterviewPromptInputProps {
 export const InterviewPromptInput = forwardRef<HTMLTextAreaElement, InterviewPromptInputProps>(
   ({ onSubmit, disabled, placeholder = "Type a custom prompt...", className }, ref) => {
     const [value, setValue] = useState("");
+    const [includeScreenshot, setIncludeScreenshot] = useState(false);
     const internalRef = useRef<HTMLTextAreaElement>(null);
     const textareaRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
 
     const handleSubmit = () => {
       const trimmed = value.trim();
       if (!trimmed || disabled) return;
-      onSubmit(trimmed);
+      onSubmit(trimmed, includeScreenshot);
       setValue("");
+      setIncludeScreenshot(false);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -34,6 +36,18 @@ export const InterviewPromptInput = forwardRef<HTMLTextAreaElement, InterviewPro
 
     return (
       <div className={cn("flex items-end gap-2 border-t p-3", className)}>
+        <Button
+          size="icon"
+          variant={includeScreenshot ? "secondary" : "ghost"}
+          onClick={() => setIncludeScreenshot(!includeScreenshot)}
+          className={cn(
+             "h-[38px] w-[38px] shrink-0 transition-colors",
+             includeScreenshot && "bg-primary/10 text-primary hover:bg-primary/20"
+          )}
+          title={includeScreenshot ? "Screenshot included" : "Include screenshot"}
+        >
+          <Camera className="h-4 w-4" />
+        </Button>
         <textarea
           ref={textareaRef}
           value={value}

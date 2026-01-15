@@ -50,7 +50,7 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
   const [isCapturing, setIsCapturing] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string>(() => generateUUID());
   const [conversations, setConversations] = useState<ConversationType[]>([]);
-  const screenshotRef = useRef<string | null>(null);
+
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new DefaultChatTransport({
@@ -108,14 +108,17 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
   }, [activeConversationId, handleNewConversation]);
 
   const sendWithScreenshot = useCallback((text: string, screenshot?: string) => {
+    const body: Record<string, any> = {
+      conversationId: activeConversationId,
+    };
+
+    if (screenshot) {
+      body.screenshot = screenshot;
+    }
+
     sendMessage(
       { parts: [{ type: "text", text }] },
-      {
-        body: {
-          conversationId: activeConversationId,
-          screenshot,
-        },
-      }
+      { body }
     );
   }, [sendMessage, activeConversationId]);
 
@@ -124,7 +127,6 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const screenshot = await (window.electron as any)?.captureScreen?.();
-      screenshotRef.current = screenshot;
       sendWithScreenshot("Analyze this coding problem. Provide Idea, Code, Walkthrough, and Test Cases.", screenshot);
     } catch (error) {
       console.error("Capture error:", error);
@@ -156,16 +158,22 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
     setIsCapturing(false);
   }, [sendWithScreenshot]);
 
-  const handleCustomPrompt = useCallback(async (prompt: string) => {
-    setIsCapturing(true);
+  const handleCustomPrompt = useCallback(async (prompt: string, includeScreenshot: boolean) => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const screenshot = await (window.electron as any)?.captureScreen?.();
+      let screenshot: string | undefined;
+      
+      if (includeScreenshot) {
+        setIsCapturing(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        screenshot = await (window.electron as any)?.captureScreen?.();
+      }
+      
       sendWithScreenshot(prompt, screenshot);
     } catch (error) {
       console.error("Capture error:", error);
+    } finally {
+      setIsCapturing(false);
     }
-    setIsCapturing(false);
   }, [sendWithScreenshot]);
 
   useEffect(() => {
