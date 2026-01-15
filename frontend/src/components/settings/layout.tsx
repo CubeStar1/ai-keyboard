@@ -7,6 +7,7 @@ import { ActionsTab } from "./actions-tab";
 import { AboutTab } from "./about-tab";
 import { MemoryTab } from "./memory-tab";
 import { GraphTab } from "./graph-tab";
+import { AccountTab } from "./account-tab";
 
 export function SettingsLayout() {
   return (
@@ -40,6 +41,12 @@ export function SettingsLayout() {
               Graph
             </TabsTrigger>
             <TabsTrigger 
+              value="account" 
+              className="px-4 py-1.5 rounded-md text-sm font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all"
+            >
+              Account
+            </TabsTrigger>
+            <TabsTrigger 
               value="about" 
               className="px-4 py-1.5 rounded-md text-sm font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all"
             >
@@ -60,6 +67,9 @@ export function SettingsLayout() {
           </TabsContent>
           <TabsContent value="graph" className="h-full mt-0 border-0 outline-none data-[state=inactive]:hidden">
             <GraphTab />
+          </TabsContent>
+          <TabsContent value="account" className="h-full mt-0 border-0 outline-none data-[state=inactive]:hidden">
+            <AccountTab />
           </TabsContent>
           <TabsContent value="about" className="h-full mt-0 border-0 outline-none data-[state=inactive]:hidden">
             <AboutTab />

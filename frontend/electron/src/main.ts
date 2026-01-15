@@ -1,5 +1,5 @@
 import { is } from "@electron-toolkit/utils";
-import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, screen } from "electron";
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, screen, Tray, nativeImage } from "electron";
 import { readFileSync } from "fs";
 import { getPort } from "get-port-please";
 import { startServer } from "next/dist/server/lib/start-server";
@@ -11,6 +11,7 @@ let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 let suggestionWindow: BrowserWindow | null = null;
 let brainPanelWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
 let nextJSPort: number | null = null;
 let contextCaptureService: ContextCaptureService | null = null;
 
@@ -22,8 +23,8 @@ let isInternalClipboardOp = false;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 500,
-    height: 500,
+    width: 800,
+    height: 800,
     minWidth: 400,
     minHeight: 400,
     maxWidth: 800,
@@ -226,6 +227,100 @@ const showSuggestionForContext = async (context: string) => {
 
 app.whenReady().then(() => {
   createWindow();
+
+  // Create system tray
+  const iconPath = join(__dirname, "..", "..", "public", "ai-kb-logo.png");
+  let trayIcon: Electron.NativeImage;
+  
+  trayIcon = nativeImage.createFromPath(iconPath);
+
+  tray = new Tray(trayIcon);
+  
+  tray.setToolTip('AI Keyboard Assistant');
+
+  const updateTrayMenu = () => {
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Show Actions Menu',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+        },
+      },
+      {
+        label: 'Brain Panel',
+        click: () => {
+          if (!brainPanelWindow || brainPanelWindow.isDestroyed()) {
+            const window = createBrainPanelWindow();
+            window.show();
+          } else if (brainPanelWindow.isVisible()) {
+            brainPanelWindow.focus();
+          } else {
+            brainPanelWindow.show();
+          }
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'Settings',
+        click: () => {
+          if (settingsWindow) {
+            settingsWindow.focus();
+            return;
+          }
+
+          settingsWindow = new BrowserWindow({
+            width: 800,
+            height: 600,
+            minWidth: 600,
+            minHeight: 500,
+            frame: true,
+            title: "AI Keyboard Settings",
+            webPreferences: {
+              preload: join(__dirname, "preload.js"),
+              nodeIntegration: true,
+            },
+          });
+
+          if (is.dev) {
+            settingsWindow.loadURL("http://localhost:3000/settings");
+          } else {
+            getOrStartNextJSServer().then((port) => {
+              settingsWindow?.loadURL(`http://localhost:${port}/settings`);
+            });
+          }
+
+          settingsWindow.on("closed", () => {
+            settingsWindow = null;
+          });
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'Quit',
+        click: () => {
+          app.quit();
+        },
+      },
+    ]);
+    tray?.setContextMenu(contextMenu);
+  };
+
+  updateTrayMenu();
+
+  // Click on tray icon shows/hides main window
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
 
   contextCaptureService = new ContextCaptureService();
   contextCaptureService.onMemoryStored((memory) => {
@@ -462,8 +557,10 @@ app.whenReady().then(() => {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+  tray?.destroy();
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  // Don't quit when all windows are closed - keep running in system tray
+  // Only quit on macOS when explicitly requested via tray menu
 });

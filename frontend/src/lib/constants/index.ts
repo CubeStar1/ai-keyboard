@@ -1,10 +1,7 @@
 export const protectedPaths = [
-  '/projects',
-  '/templates',
-  '/templates/create',
-  '/chat',
-  '/admin',
-  '/admin/users',
-  '/admin/approvals',
+  '/',
+  '/settings',
+  '/brain-panel',
 ]
 export const authPaths = ['/register', '/signin']
+
