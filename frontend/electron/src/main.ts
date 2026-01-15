@@ -228,7 +228,6 @@ const showSuggestionForContext = async (context: string) => {
 app.whenReady().then(() => {
   createWindow();
 
-  // Create system tray
   const iconPath = join(__dirname, "..", "..", "public", "ai-kb-logo.png");
   let trayIcon: Electron.NativeImage;
   
@@ -310,7 +309,6 @@ app.whenReady().then(() => {
 
   updateTrayMenu();
 
-  // Click on tray icon shows/hides main window
   tray.on('click', () => {
     if (mainWindow) {
       if (mainWindow.isVisible()) {
@@ -561,6 +559,5 @@ app.on("will-quit", () => {
 });
 
 app.on("window-all-closed", () => {
-  // Don't quit when all windows are closed - keep running in system tray
-  // Only quit on macOS when explicitly requested via tray menu
+
 });

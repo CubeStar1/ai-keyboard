@@ -5,6 +5,8 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createGroq } from '@ai-sdk/groq'
 import { createCerebras } from '@ai-sdk/cerebras'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
 
 // const isDevToolsEnabled = process.env.ENABLE_AI_DEVTOOLS === 'true'
 
@@ -42,6 +44,8 @@ export const titleGenerationModels: Record<string, string> = {
   'z-ai/glm-4.7': 'z-ai/glm-4.7',
   'moonshotai/kimi-k2-thinking': 'moonshotai/kimi-k2-thinking',
   'anthropic/claude-sonnet-4.5': 'openai/gpt-oss-120b',
+
+  'openai/gpt-oss-20b-lmstudio': 'openai/gpt-oss-20b-lmstudio',
 }
 
 export function getTitleGenerationModel(selectedModel: string): string {
@@ -74,6 +78,11 @@ export function createMyProvider(
   const cerebrasProvider = createCerebras({
     apiKey: apiKeys.cerebras || process.env.CEREBRAS_API_KEY,
   })
+
+  const lmstudio = createOpenAICompatible({
+    name: 'lmstudio',
+    baseURL: 'http://localhost:1234/v1',
+  });
 
 
   return customProvider({
@@ -114,6 +123,7 @@ export function createMyProvider(
       'llama3.1-8b': cerebrasProvider('llama3.1-8b'),
       'gpt-oss-120b': cerebrasProvider('gpt-oss-120b'),
 
+      'openai/gpt-oss-20b-lmstudio': lmstudio('openai/gpt-oss-20b'),
     },
     fallbackProvider: openai,
   })

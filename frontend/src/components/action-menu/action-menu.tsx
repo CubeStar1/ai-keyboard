@@ -9,7 +9,6 @@ import { loadActions, getActionPrompt, getActionByShortcut } from "@/lib/ai/acti
 import { ActionList } from "./action-list";
 import { ResultPanel } from "./result-panel";
 import { ChatPanel } from "./chat-panel";
-import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { Search, Settings, Sun, Moon } from "lucide-react";
 import { generateUUID } from "@/lib/utils/generate-uuid";
@@ -47,7 +46,6 @@ export function ActionMenu({
 
   const isLoading = status === "streaming" || status === "submitted";
 
-  // Extract completion text from messages
   const lastAssistantMessage = messages
     .filter(m => m.role === "assistant")
     .pop();
@@ -168,6 +166,15 @@ export function ActionMenu({
         }
       }
 
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const chatAction = allActions.find(a => a.id === "chat");
+        if (chatAction) {
+          handleActionSelect(chatAction);
+        }
+        return;
+      }
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((prev) =>
@@ -257,19 +264,23 @@ export function ActionMenu({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="px-3 py-3">
-        <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
-          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-          <Input
+      <div className="px-2 pt-2 pb-1">
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-white/[0.03] dark:bg-white/[0.03] border border-white/[0.06] dark:border-white/[0.06]">
+          <Search className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+          <input
             ref={inputRef}
             value={filter}
             onChange={(e) => {
               setFilter(e.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Search actions"
-            className="border-none p-0 h-auto text-sm bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
+            placeholder="Search for actions..."
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
           />
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] text-muted-foreground/50">Quick AI</span>
+            <Kbd className="text-[10px] px-1.5 py-0.5 bg-white/[0.08] border-white/[0.1]">Tab</Kbd>
+          </div>
         </div>
       </div>
 

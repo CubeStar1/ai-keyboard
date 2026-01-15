@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utils";
 import { Action } from "@/lib/ai/types";
 import { memo, useRef, useEffect } from "react";
-import { Kbd } from "@/components/ui/kbd";
 
 interface ActionListProps {
   actions: Action[];
@@ -24,22 +23,30 @@ export const ActionList = memo(function ActionList({
 
   if (filteredActions.length === 0) {
     return (
-      <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+      <div className="px-4 py-8 text-center text-sm text-muted-foreground/60">
         No actions found
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col py-2">
-      {filteredActions.map((action, index) => (
-        <ActionItem
-          key={action.id}
-          action={action}
-          isSelected={index === selectedIndex}
-          onClick={() => onSelect(action)}
-        />
-      ))}
+    <div className="flex flex-col">
+      <div className="px-4 py-2">
+        <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+          AI Actions
+        </span>
+      </div>
+
+      <div className="flex flex-col px-2">
+        {filteredActions.map((action, index) => (
+          <ActionItem
+            key={action.id}
+            action={action}
+            isSelected={index === selectedIndex}
+            onClick={() => onSelect(action)}
+          />
+        ))}
+      </div>
     </div>
   );
 });
@@ -66,20 +73,21 @@ function ActionItem({ action, isSelected, onClick }: ActionItemProps) {
     <button
       ref={ref}
       onClick={onClick}
+      tabIndex={-1}
       className={cn(
-        "flex items-center justify-between gap-3 mx-2 px-3 py-3 text-left transition-colors rounded-lg",
-        "hover:bg-muted/60",
-        isSelected && "bg-muted"
+        "flex items-center justify-between gap-3 px-3 py-2 text-left transition-colors rounded-md",
+        "hover:bg-white/[0.05] dark:hover:bg-white/[0.05]",
+        isSelected && "bg-white/[0.08] dark:bg-white/[0.08]"
       )}
     >
       <div className="flex items-center gap-3">
-        <span className="text-lg opacity-80">{action.icon}</span>
-        <span className="text-sm font-semibold text-foreground">{action.label}</span>
+        <span className="text-base w-5 text-center">{action.icon}</span>
+        <span className="text-[13px] font-medium text-foreground">{action.label}</span>
       </div>
       {action.shortcut && (
-        <div className="flex items-center gap-1">
-          <Kbd className="text-xs px-1.5 py-0.5">Alt</Kbd>
-          <Kbd className="text-xs px-1.5 py-0.5">{action.shortcut}</Kbd>
+        <div className="flex items-center gap-0.5 text-muted-foreground/40">
+          <span className="text-[11px]">Alt</span>
+          <span className="text-[11px] ml-1 font-medium">{action.shortcut}</span>
         </div>
       )}
     </button>

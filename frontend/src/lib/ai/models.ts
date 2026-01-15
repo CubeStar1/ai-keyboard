@@ -39,6 +39,11 @@ export const models: Model[] = [
     label: 'GPT OSS 120B',
     provider: 'Cerebras',
   },
+  {
+    id: 'openai/gpt-oss-20b-lmstudio',
+    label: 'GPT OSS 20B (LMStudio)',
+    provider: 'LMStudio',
+  },
 ]
 
 export const defaultModel = 'gpt-4.1-mini'
