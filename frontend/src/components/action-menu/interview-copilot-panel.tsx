@@ -197,9 +197,9 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
         return;
       }
 
-      if (e.altKey && e.key.toLowerCase() === "n") {
+      if (e.ctrlKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
-        handleCodeSuggestion();
+        handleNewConversation();
         return;
       }
 
@@ -212,7 +212,7 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleAnalyze, handleUpdate, handleCodeSuggestion, onBack]);
+  }, [handleAnalyze, handleUpdate, handleCodeSuggestion, handleNewConversation, onBack]);
 
   const isLoading = status === "streaming" || status === "submitted" || isCapturing;
 
@@ -389,7 +389,7 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon-sm" onClick={onBack}>
@@ -465,15 +465,17 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
         ))}
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col overflow-auto">
+      <div className="flex-1 min-h-0 flex flex-col overflow-auto pb-10">
         {renderContent()}
       </div>
 
-      <InterviewPromptInput
-        onSubmit={handleCustomPrompt}
-        disabled={isLoading}
-        placeholder="Type a custom prompt..."
-      />
+      <div className="absolute bottom-[3rem] left-4 right-4 z-20">
+        <InterviewPromptInput
+          onSubmit={handleCustomPrompt}
+          disabled={isLoading}
+          placeholder="Type a custom prompt..."
+        />
+      </div>
 
       <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-4">

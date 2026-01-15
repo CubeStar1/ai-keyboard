@@ -35,18 +35,19 @@ export const InterviewPromptInput = forwardRef<HTMLTextAreaElement, InterviewPro
     };
 
     return (
-      <div className={cn("flex items-end gap-2 border-t p-3", className)}>
+      <div className={cn("relative flex items-end gap-2 bg-background/80 px-2 py-1.5 backdrop-blur-sm border rounded-full shadow-lg", className)}>
         <Button
           size="icon"
           variant={includeScreenshot ? "secondary" : "ghost"}
           onClick={() => setIncludeScreenshot(!includeScreenshot)}
           className={cn(
-             "h-[38px] w-[38px] shrink-0 transition-colors",
-             includeScreenshot && "bg-primary/10 text-primary hover:bg-primary/20"
+            "h-10 w-10 shrink-0 rounded-full transition-colors",
+            includeScreenshot && "bg-primary text-primary-foreground hover:bg-primary/20",
+            !includeScreenshot && "text-muted-foreground hover:bg-muted"
           )}
           title={includeScreenshot ? "Screenshot included" : "Include screenshot"}
         >
-          <Camera className="h-4 w-4" />
+          <Camera className="h-6 w-6" />
         </Button>
         <textarea
           ref={textareaRef}
@@ -57,20 +58,21 @@ export const InterviewPromptInput = forwardRef<HTMLTextAreaElement, InterviewPro
           disabled={disabled}
           rows={1}
           className={cn(
-            "flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm",
-            "ring-offset-background placeholder:text-muted-foreground",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            "flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            "max-h-32 min-h-[38px]"
+            "max-h-32 min-h-[36px]"
           )}
         />
         <Button
           size="icon"
           onClick={handleSubmit}
           disabled={!value.trim() || disabled}
-          className="h-[38px] w-[38px] shrink-0"
+          className={cn(
+            "h-10 w-10 shrink-0 rounded-full transition-all",
+            value.trim() ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted text-muted-foreground"
+          )}
         >
-          <Send className="h-4 w-4" />
+          <Send className="h-6 w-6" />
         </Button>
       </div>
     );
