@@ -46,6 +46,7 @@ export const titleGenerationModels: Record<string, string> = {
   'anthropic/claude-sonnet-4.5': 'openai/gpt-oss-120b',
 
   'openai/gpt-oss-20b-lmstudio': 'openai/gpt-oss-20b-lmstudio',
+  'qwen/qwen3-4b-thinking-2507-lmstudio': 'qwen/qwen3-4b-thinking-2507-lmstudio',
 }
 
 export function getTitleGenerationModel(selectedModel: string): string {
@@ -124,6 +125,7 @@ export function createMyProvider(
       'gpt-oss-120b': cerebrasProvider('gpt-oss-120b'),
 
       'openai/gpt-oss-20b-lmstudio': lmstudio('openai/gpt-oss-20b'),
+      'qwen/qwen3-4b-thinking-2507-lmstudio': lmstudio('qwen/qwen3-4b-thinking-2507'),
     },
     fallbackProvider: openai,
   })

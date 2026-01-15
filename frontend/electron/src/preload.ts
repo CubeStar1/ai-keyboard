@@ -48,6 +48,8 @@ contextBridge.exposeInMainWorld("electron", {
   setContextCaptureEnabled: (enabled: boolean) =>
     ipcRenderer.send("set-context-capture-enabled", enabled),
 
+  captureScreen: () => ipcRenderer.invoke("capture-screen"),
+
   onAnalyzeScreenshot: (callback: (data: { dataUrl: string; timestamp: string }) => void) => {
     const handler = (_: IpcRendererEvent, data: { dataUrl: string; timestamp: string }) => callback(data);
     ipcRenderer.on("analyze-screenshot", handler);

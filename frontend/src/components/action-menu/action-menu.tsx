@@ -9,6 +9,7 @@ import { loadActions, getActionPrompt, getActionByShortcut } from "@/lib/ai/acti
 import { ActionList } from "./action-list";
 import { ResultPanel } from "./result-panel";
 import { ChatPanel } from "./chat-panel";
+import { InterviewCopilotPanel } from "./interview-copilot-panel";
 import { Kbd } from "@/components/ui/kbd";
 import { Search, Settings, Sun, Moon } from "lucide-react";
 import { generateUUID } from "@/lib/utils/generate-uuid";
@@ -30,6 +31,7 @@ export function ActionMenu({
   const [customPrompt, setCustomPrompt] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [showChatMode, setShowChatMode] = useState(false);
+  const [showCopilotMode, setShowCopilotMode] = useState(false);
   const [allActions, setAllActions] = useState<Action[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const { theme, setTheme } = useTheme();
@@ -66,6 +68,11 @@ export function ActionMenu({
     async (action: Action) => {
       if (action.id === "chat") {
         setShowChatMode(true);
+        return;
+      }
+
+      if (action.id === "interview-copilot") {
+        setShowCopilotMode(true);
         return;
       }
 
@@ -128,11 +135,12 @@ export function ActionMenu({
     setMessages([]);
     setShowCustomInput(false);
     setShowChatMode(false);
+    setShowCopilotMode(false);
   }, [setMessages]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (showChatMode) return;
+      if (showChatMode || showCopilotMode) return;
 
       if (e.key === "Escape") {
         if (currentAction || showCustomInput) {
@@ -210,6 +218,15 @@ export function ActionMenu({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  if (showCopilotMode) {
+    return (
+      <InterviewCopilotPanel
+        onBack={handleBack}
+        onClose={onClose}
+      />
+    );
+  }
 
   if (showChatMode) {
     return (

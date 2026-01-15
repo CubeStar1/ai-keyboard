@@ -1,5 +1,5 @@
 import { is } from "@electron-toolkit/utils";
-import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, screen, Tray, nativeImage } from "electron";
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, screen, Tray, nativeImage, desktopCapturer } from "electron";
 import { readFileSync } from "fs";
 import { getPort } from "get-port-please";
 import { startServer } from "next/dist/server/lib/start-server";
@@ -465,6 +465,25 @@ app.whenReady().then(() => {
     contextCaptureService?.updateConfig({ enabled });
     if (brainPanelWindow && !brainPanelWindow.isDestroyed()) {
       brainPanelWindow.webContents.send("capture-status-changed", enabled);
+    }
+  });
+
+  ipcMain.handle("capture-screen", async () => {
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ["screen"],
+        thumbnailSize: { width: 1280, height: 720 },
+      });
+
+      if (sources.length === 0) {
+        console.log("[IPC] No screen sources found");
+        return null;
+      }
+
+      return sources[0].thumbnail.toDataURL();
+    } catch (error) {
+      console.error("[IPC] Screenshot capture failed:", error);
+      return null;
     }
   });
 

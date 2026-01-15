@@ -219,3 +219,5 @@ nav {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #5a5a5a; /* Dark hover: Lighter gray for contrast */
 }
+
+@source ".../node_modules/streamdown/dist/*.js";

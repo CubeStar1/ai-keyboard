@@ -44,6 +44,11 @@ export const models: Model[] = [
     label: 'GPT OSS 20B (LMStudio)',
     provider: 'LMStudio',
   },
+  {
+    id: 'qwen/qwen3-4b-thinking-2507-lmstudio',
+    label: 'Qwen3 4B Thinking (LMStudio)',
+    provider: 'LMStudio',
+  },
 ]
 
 export const defaultModel = 'gpt-4.1-mini'

@@ -11,6 +11,14 @@ export const DEFAULT_ACTIONS: Action[] = [
     isDefault: true 
   },
   { 
+    id: "interview-copilot", 
+    label: "Interview Copilot", 
+    icon: "🎯", 
+    shortcut: "I",
+    isDefault: true,
+    description: "AI-powered coding interview assistant"
+  },
+  { 
     id: "fix-grammar", 
     label: "Fix Grammar", 
     icon: "✍️", 
