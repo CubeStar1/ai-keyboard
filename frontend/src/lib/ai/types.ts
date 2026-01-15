@@ -65,6 +65,31 @@ export interface Message {
   metadata?: TelemetryMetadata
 }
 
+export interface InterviewSession {
+  id: string
+  user_id?: string
+  title: string
+  updated_at: string
+  created_at: string
+}
+
+export interface InterviewAnalysis {
+  idea?: string
+  code?: string
+  walkthrough?: string
+  testCases?: Array<{ input?: string; output?: string; reason?: string }>
+  memories?: Array<{ memory?: string; createdAt?: string }>
+}
+
+export interface InterviewMessage {
+  id: string
+  session_id: string
+  role: 'user' | 'assistant'
+  content: string
+  analysis?: InterviewAnalysis
+  created_at: string
+}
+
 export interface TavilySearchResult {
   title: string
   url: string

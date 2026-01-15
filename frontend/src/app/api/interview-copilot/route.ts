@@ -2,13 +2,18 @@
 import {
   streamText,
   Output,
-  tool,
   stepCountIs,
 } from "ai";
 import { myProvider } from "@/lib/ai";
 import { defaultModel } from "@/lib/ai/models";
 import { z } from "zod";
 import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from "@/lib/ai/tools/memory";
+import {
+  saveInterviewSession,
+  saveInterviewMessage,
+  getInterviewSessionById,
+  generateInterviewSessionTitle,
+} from "@/actions/interview-copilot";
 
 const analysisSchema = z.object({
   idea: z.string().describe("Problem understanding, key observations, approaches"),
@@ -121,20 +126,41 @@ Include ALL relevant memories you retrieved from the memory search. Each memory 
 Be concise but thorough. Use the user's preferred language if found in memory.`
 
 export async function POST(req: Request) {
-  const { context, screenshot } = await req.json();
+  const { context, screenshot, sessionId, messageId, assistantMessageId, history } = await req.json();
+
+  console.log("history", history);
+
+  if (sessionId && messageId) {
+    const existingSession = await getInterviewSessionById(sessionId);
+    if (!existingSession) {
+      const title = await generateInterviewSessionTitle(context || "Coding problem analysis");
+      await saveInterviewSession({ id: sessionId, title });
+    }
+    await saveInterviewMessage({
+      id: messageId,
+      sessionId,
+      role: "user",
+      content: context || "Analyze this coding problem.",
+    });
+  }
+
+  const historyMessages = (history || []).map((m: { role: string; content: string }) => ({
+    role: m.role as "user" | "assistant",
+    content: m.content,
+  }));
+
+  const currentMessage = {
+    role: "user" as const,
+    content: [
+      { type: "text" as const, text: context || "Analyze this coding problem." },
+      ...(screenshot ? [{ type: "image" as const, image: screenshot }] : []),
+    ],
+  };
 
   const result = streamText({
     model: myProvider.languageModel(defaultModel),
     system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: context || "Analyze this coding problem." },
-          ...(screenshot ? [{ type: "image" as const, image: screenshot }] : []),
-        ],
-      },
-    ],
+    messages: [...historyMessages, currentMessage],
     tools: {
       searchMemory: searchMemoryTool,
       getAllMemories: getAllMemoriesTool,
@@ -144,7 +170,25 @@ export async function POST(req: Request) {
       schema: analysisSchema,
     }),
     stopWhen: stepCountIs(5),
+    onFinish: async ({ text }) => {
+      if (sessionId && assistantMessageId && text) {
+        try {
+          const output = JSON.parse(text) as z.infer<typeof analysisSchema>;
+          await saveInterviewMessage({
+            id: assistantMessageId,
+            sessionId,
+            role: "assistant",
+            content: "Analysis complete",
+            analysis: output,
+          });
+        } catch (error) {
+          console.error("Error parsing/saving assistant message:", error);
+        }
+      }
+    },
   });
 
   return result.toTextStreamResponse();
 }
+
+
