@@ -38,7 +38,7 @@ const TABS = [
   { id: "idea", label: "Idea", shortcut: "2", Icon: Lightbulb },
   { id: "code", label: "Code", shortcut: "3", Icon: Code },
   { id: "walkthrough", label: "Walkthrough", shortcut: "4", Icon: FileText },
-  { id: "testcases", label: "Test Cases", shortcut: "5", Icon: FlaskConical },
+  { id: "testcases", label: "TC", shortcut: "5", Icon: FlaskConical },
   { id: "memories", label: "Memories", shortcut: "6", Icon: Brain },
 ] as const;
 
@@ -232,6 +232,7 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
 
   const renderContent = () => {
     const analysis = getLatestAnalysis();
+    const isStreaming = status === "streaming" || status === "submitted";
     
     if (messages.length === 0 && !isLoading) {
       return (
@@ -293,6 +294,14 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
         .filter(Boolean);
       
       if (allMemories.length === 0) {
+        if (isStreaming) {
+          return (
+            <div className="flex flex-1 items-center justify-center">
+              <MemoriesLoading />
+            </div>
+          );
+        }
+
         return (
           <div className="flex flex-1 flex-col items-center justify-center text-center text-muted-foreground">
             <Target className="mb-4 h-10 w-10 opacity-40" />
@@ -322,17 +331,9 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
       );
     }
 
-    if (!analysis) {
-      return (
-        <div className="flex flex-1 flex-col items-center justify-center text-center text-muted-foreground">
-          <Target className="mb-4 h-10 w-10 opacity-40" />
-          <p className="text-sm">No content for this tab yet.</p>
-          <p className="mt-1 text-xs">Try analyzing a problem first.</p>
-        </div>
-      );
-    }
-
     const content = (() => {
+      if (!analysis) return "";
+      
       switch (activeTab) {
         case "idea":
           return analysis.idea || "";
@@ -351,8 +352,6 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
           return "";
       }
     })();
-
-    const isStreaming = status === "streaming";
 
     if (!content && isStreaming) {
       const renderLoadingState = () => {
