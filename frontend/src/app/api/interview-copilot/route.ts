@@ -1,13 +1,17 @@
-
 import {
+  UIMessage,
   streamText,
   Output,
   stepCountIs,
+  convertToModelMessages,
+  createUIMessageStream,
+  JsonToSseTransformStream,
 } from "ai";
 import { myProvider } from "@/lib/ai";
 import { defaultModel } from "@/lib/ai/models";
 import { z } from "zod";
 import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from "@/lib/ai/tools/memory";
+import { generateUUID } from "@/lib/utils/generate-uuid";
 import {
   saveInterviewSession,
   saveInterviewMessage,
@@ -29,7 +33,6 @@ const analysisSchema = z.object({
     createdAt: z.string().describe("ISO timestamp when this memory was retrieved/created")
   })).describe("Relevant memories retrieved about the user's preferences and context")
 });
-
 
 const SYSTEM_PROMPT = `You are an expert Interview Copilot for technical coding interviews.
 
@@ -55,7 +58,6 @@ User ID: "user-1" (always use this)
 Format ALL content fields using **GitHub-Flavored Markdown**:
 
 ### For the \`idea\` field:
-\`\`\`markdown
 ## 💡 Problem Analysis
 
 ### Key Observations
@@ -68,28 +70,13 @@ Format ALL content fields using **GitHub-Flavored Markdown**:
 
 ### Edge Cases to Consider
 - Empty input, single element, duplicates, etc.
-\`\`\`
 
 ### For the \`code\` field:
 - MUST be wrapped in triple backticks with language identifier
 - Include clear comments explaining key logic
 - Use proper indentation and clean formatting
-\`\`\`markdown
-\`\`\`python
-def solution(nums: List[int]) -> int:
-    # Initialize variables
-    result = 0
-    
-    # Main algorithm logic
-    for num in nums:
-        result += num
-    
-    return result
-\`\`\`
-\`\`\`
 
 ### For the \`walkthrough\` field:
-\`\`\`markdown
 ## 🚶 Step-by-Step Walkthrough
 
 ### Step 1: Initialization
@@ -98,15 +85,11 @@ Explain what we set up and why...
 ### Step 2: Main Loop
 Walk through the core algorithm...
 
-### Step 3: Return Result
-Explain the final computation...
-
 ### Complexity Analysis
 | Metric | Value | Explanation |
 |--------|-------|-------------|
 | Time   | O(n)  | Single pass through array |
 | Space  | O(1)  | Only using constant extra space |
-\`\`\`
 
 ### For the \`testCases\` array:
 Each test case should have clear input, output, and reason fields.
@@ -123,72 +106,106 @@ Include ALL relevant memories you retrieved from the memory search. Each memory 
 4. **Include retrieved memories** in the \`memories\` field of your response
 5. **Store any new insights** about the user using \`addMemory\`
 
-Be concise but thorough. Use the user's preferred language if found in memory.`
+Be concise but thorough. Use the user's preferred language if found in memory.`;
 
 export async function POST(req: Request) {
-  const { context, screenshot, sessionId, messageId, assistantMessageId, history } = await req.json();
+  const body = await req.json();
+  const { messages, sessionId, screenshot } = body as {
+    messages: UIMessage[];
+    sessionId?: string;
+    screenshot?: string;
+  };
 
-  console.log("history", history);
+  if (!messages || !Array.isArray(messages)) {
+    return new Response("Missing messages", { status: 400 });
+  }
 
-  if (sessionId && messageId) {
+  const userMessage = messages[messages.length - 1];
+  const userContent = userMessage?.parts?.find((p: { type: string }) => p.type === "text")?.text || "Analyze this coding problem.";
+
+  if (sessionId && userMessage) {
     const existingSession = await getInterviewSessionById(sessionId);
     if (!existingSession) {
-      const title = await generateInterviewSessionTitle(context || "Coding problem analysis");
+      const title = await generateInterviewSessionTitle(userContent);
       await saveInterviewSession({ id: sessionId, title });
     }
     await saveInterviewMessage({
-      id: messageId,
+      id: userMessage.id || generateUUID(),
       sessionId,
       role: "user",
-      content: context || "Analyze this coding problem.",
+      content: userContent,
     });
   }
 
-  const historyMessages = (history || []).map((m: { role: string; content: string }) => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
+  const modelMessages = await convertToModelMessages(messages);
+  
+  if (screenshot) {
+    const lastMsg = modelMessages[modelMessages.length - 1];
+    if (lastMsg && lastMsg.role === "user") {
+      if (typeof lastMsg.content === "string") {
+        lastMsg.content = [
+          { type: "text", text: lastMsg.content },
+          { type: "image", image: screenshot },
+        ];
+      } else if (Array.isArray(lastMsg.content)) {
+        lastMsg.content.push({ type: "image", image: screenshot });
+      }
+    }
+  }
 
-  const currentMessage = {
-    role: "user" as const,
-    content: [
-      { type: "text" as const, text: context || "Analyze this coding problem." },
-      ...(screenshot ? [{ type: "image" as const, image: screenshot }] : []),
-    ],
-  };
+  const stream = createUIMessageStream({
+    generateId: generateUUID,
+    execute: async ({ writer: dataStream }) => {
+      const result = streamText({
+        model: myProvider.languageModel(defaultModel),
+        system: SYSTEM_PROMPT,
+        messages: modelMessages,
+        tools: {
+          searchMemory: searchMemoryTool,
+          getAllMemories: getAllMemoriesTool,
+          addMemory: addMemoryTool,
+        },
+        output: Output.object({
+          schema: analysisSchema,
+        }),
+        stopWhen: stepCountIs(5),
+        onError: (error) => {
+          console.error("Interview Copilot stream error:", error);
+        },
+      });
 
-  const result = streamText({
-    model: myProvider.languageModel(defaultModel),
-    system: SYSTEM_PROMPT,
-    messages: [...historyMessages, currentMessage],
-    tools: {
-      searchMemory: searchMemoryTool,
-      getAllMemories: getAllMemoriesTool,
-      addMemory: addMemoryTool,
+      result.consumeStream();
+
+      dataStream.merge(
+        result.toUIMessageStream({
+          sendReasoning: true,
+        })
+      );
     },
-    output: Output.object({
-      schema: analysisSchema,
-    }),
-    stopWhen: stepCountIs(5),
-    onFinish: async ({ text }) => {
-      if (sessionId && assistantMessageId && text) {
-        try {
-          const output = JSON.parse(text) as z.infer<typeof analysisSchema>;
+    onFinish: async ({ messages: generatedMessages }) => {
+      if (sessionId && generatedMessages && generatedMessages.length > 0) {
+        const assistantMessage = generatedMessages[generatedMessages.length - 1];
+        if (assistantMessage && assistantMessage.role === "assistant") {
+          const textPart = assistantMessage.parts?.find((p: { type: string }) => p.type === "text");
+          let analysis = null;
+          if (textPart && 'text' in textPart) {
+            try {
+              analysis = JSON.parse(textPart.text);
+            } catch {
+              // Not JSON, that's fine
+            }
+          }
           await saveInterviewMessage({
-            id: assistantMessageId,
+            id: assistantMessage.id || generateUUID(),
             sessionId,
             role: "assistant",
-            content: "Analysis complete",
-            analysis: output,
+            content: textPart && 'text' in textPart ? textPart.text : "Analysis complete",
+            analysis,
           });
-        } catch (error) {
-          console.error("Error parsing/saving assistant message:", error);
         }
       }
     },
   });
 
-  return result.toTextStreamResponse();
+  return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
 }
-
-
