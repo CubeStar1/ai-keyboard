@@ -21,6 +21,22 @@ export async function getConversations(): Promise<Conversation[]> {
   return data as Conversation[];
 }
 
+export async function getInterviewConversations(): Promise<Conversation[]> {
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("type", "interview")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching interview conversations:", error);
+    return [];
+  }
+  
+  return data as Conversation[];
+}
+
 export async function getConversationMessages(
   conversationId: string
 ): Promise<UIMessage[]> {
@@ -41,6 +57,7 @@ export async function getConversationMessages(
     role: msg.role as "user" | "assistant",
     parts: msg.parts as UIMessage["parts"],
     createdAt: new Date(msg.created_at),
+    metadata: msg.metadata || {},
   }));
 }
 
@@ -65,14 +82,16 @@ export async function getChatById(
 export async function saveChat({
   id,
   title,
+  type = "chat",
 }: {
   id: string;
   title: string;
+  type?: string;
 }): Promise<Conversation | null> {
   const supabase = await createSupabaseServer();
   const { data, error } = await supabase
     .from("conversations")
-    .insert({ id, title })
+    .insert({ id, title, type })
     .select()
     .single();
 

@@ -24,6 +24,7 @@ create table public.conversations (
   id uuid not null default extensions.uuid_generate_v4 (),
   user_id uuid null,
   title text not null,
+  type text not null default 'chat',
   lastContext jsonb null,
   created_at timestamp with time zone null default CURRENT_TIMESTAMP,
   updated_at timestamp with time zone null default CURRENT_TIMESTAMP,

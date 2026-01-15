@@ -13,11 +13,11 @@ import { z } from "zod";
 import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from "@/lib/ai/tools/memory";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import {
-  saveInterviewSession,
-  saveInterviewMessage,
-  getInterviewSessionById,
-  generateInterviewSessionTitle,
-} from "@/actions/interview-copilot";
+  saveChat,
+  saveMessages,
+  getChatById,
+  generateTitleFromUserMessage,
+} from "@/actions/chat";
 
 const analysisSchema = z.object({
   idea: z.string().describe("Problem understanding, key observations, approaches"),
@@ -110,9 +110,9 @@ Be concise but thorough. Use the user's preferred language if found in memory.`;
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { messages, sessionId, screenshot } = body as {
+  const { messages, conversationId, screenshot } = body as {
     messages: UIMessage[];
-    sessionId?: string;
+    conversationId?: string;
     screenshot?: string;
   };
 
@@ -121,20 +121,14 @@ export async function POST(req: Request) {
   }
 
   const userMessage = messages[messages.length - 1];
-  const userContent = userMessage?.parts?.find((p: { type: string }) => p.type === "text")?.text || "Analyze this coding problem.";
 
-  if (sessionId && userMessage) {
-    const existingSession = await getInterviewSessionById(sessionId);
-    if (!existingSession) {
-      const title = await generateInterviewSessionTitle(userContent);
-      await saveInterviewSession({ id: sessionId, title });
+  if (conversationId && userMessage) {
+    const existingChat = await getChatById(conversationId);
+    if (!existingChat) {
+      const title = await generateTitleFromUserMessage(userMessage, defaultModel);
+      await saveChat({ id: conversationId, title, type: "interview" });
     }
-    await saveInterviewMessage({
-      id: userMessage.id || generateUUID(),
-      sessionId,
-      role: "user",
-      content: userContent,
-    });
+    await saveMessages([userMessage], conversationId);
   }
 
   const modelMessages = await convertToModelMessages(messages);
@@ -183,25 +177,25 @@ export async function POST(req: Request) {
       );
     },
     onFinish: async ({ messages: generatedMessages }) => {
-      if (sessionId && generatedMessages && generatedMessages.length > 0) {
-        const assistantMessage = generatedMessages[generatedMessages.length - 1];
-        if (assistantMessage && assistantMessage.role === "assistant") {
-          const textPart = assistantMessage.parts?.find((p: { type: string }) => p.type === "text");
-          let analysis = null;
-          if (textPart && 'text' in textPart) {
-            try {
-              analysis = JSON.parse(textPart.text);
-            } catch {
-              // Not JSON, that's fine
+      if (conversationId && generatedMessages && generatedMessages.length > 0) {
+        const assistantMessages = generatedMessages.filter(m => m.role === "assistant");
+        if (assistantMessages.length > 0) {
+          const messagesWithMetadata = assistantMessages.map(msg => {
+            const textPart = msg.parts?.find((p: { type: string }) => p.type === "text");
+            let analysis = null;
+            if (textPart && 'text' in textPart) {
+              try {
+                analysis = JSON.parse(textPart.text);
+              } catch {
+                // Not JSON
+              }
             }
-          }
-          await saveInterviewMessage({
-            id: assistantMessage.id || generateUUID(),
-            sessionId,
-            role: "assistant",
-            content: textPart && 'text' in textPart ? textPart.text : "Analysis complete",
-            analysis,
+            return {
+              ...msg,
+              metadata: analysis ? { analysis, type: "interview" } : { type: "interview" },
+            };
           });
+          await saveMessages(messagesWithMetadata as UIMessage[], conversationId);
         }
       }
     },

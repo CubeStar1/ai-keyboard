@@ -8,12 +8,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { History, Trash2 } from "lucide-react";
-import { InterviewSession } from "@/lib/ai/types";
+import { Conversation } from "@/lib/ai/types";
 
 interface InterviewHistoryProps {
-  sessions: InterviewSession[];
-  onSelect: (sessionId: string) => void;
-  onDelete: (e: React.MouseEvent, sessionId: string) => void;
+  sessions: Conversation[];
+  onSelect: (conversationId: string) => void;
+  onDelete: (e: React.MouseEvent, conversationId: string) => void;
   disabled?: boolean;
 }
 

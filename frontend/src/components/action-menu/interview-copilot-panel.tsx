@@ -13,12 +13,12 @@ import { Conversation, ConversationContent } from "@/components/ai-elements/conv
 import { InterviewPromptInput } from "./interview-prompt-input";
 import { InterviewHistory } from "./interview-history";
 import { generateUUID } from "@/lib/utils/generate-uuid";
-import { InterviewSession, InterviewAnalysis } from "@/lib/ai/types";
+import { InterviewAnalysis, Conversation as ConversationType } from "@/lib/ai/types";
 import {
-  getInterviewSessions,
-  getInterviewSessionMessages,
-  deleteInterviewSession,
-} from "@/actions/interview-copilot";
+  getInterviewConversations,
+  getConversationMessages,
+  deleteConversation,
+} from "@/actions/chat";
 import {
   AnalyzingLoading,
   IdeaLoading,
@@ -47,8 +47,8 @@ type TabId = (typeof TABS)[number]["id"];
 export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("chat");
   const [isCapturing, setIsCapturing] = useState(false);
-  const [activeSessionId, setActiveSessionId] = useState<string>(() => generateUUID());
-  const [sessions, setSessions] = useState<InterviewSession[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string>(() => generateUUID());
+  const [conversations, setConversations] = useState<ConversationType[]>([]);
   const screenshotRef = useRef<string | null>(null);
 
   const { messages, status, sendMessage, setMessages } = useChat({
@@ -60,69 +60,63 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
       console.error("Interview Copilot error:", error);
     },
     onFinish: () => {
-      loadSessions();
+      loadConversations();
     },
   });
 
-  const loadSessions = useCallback(async () => {
+  const loadConversations = useCallback(async () => {
     try {
-      const data = await getInterviewSessions();
-      setSessions(data);
+      const data = await getInterviewConversations();
+      setConversations(data);
     } catch (error) {
-      console.error("Error loading sessions:", error);
+      console.error("Error loading conversations:", error);
     }
   }, []);
 
   useEffect(() => {
-    loadSessions();
-  }, [loadSessions]);
+    loadConversations();
+  }, [loadConversations]);
 
-  const handleSwitchSession = useCallback(async (sessionId: string) => {
-    setActiveSessionId(sessionId);
+  const handleSwitchConversation = useCallback(async (conversationId: string) => {
+    setActiveConversationId(conversationId);
     try {
-      const msgs = await getInterviewSessionMessages(sessionId);
-      const uiMessages: UIMessage[] = msgs.map(m => ({
-        id: m.id,
-        role: m.role,
-        parts: [{ type: "text" as const, text: m.role === "user" ? m.content : JSON.stringify(m.analysis || { idea: m.content }) }],
-        createdAt: new Date(m.created_at),
-      }));
-      setMessages(uiMessages);
+      const msgs = await getConversationMessages(conversationId);
+      setMessages(msgs);
     } catch (error) {
       console.error("Error loading messages:", error);
     }
   }, [setMessages]);
 
-  const handleNewSession = useCallback(() => {
+  const handleNewConversation = useCallback(() => {
     const newId = generateUUID();
-    setActiveSessionId(newId);
+    setActiveConversationId(newId);
     setMessages([]);
   }, [setMessages]);
 
-  const handleDeleteSession = useCallback(async (e: React.MouseEvent, sessionId: string) => {
+  const handleDeleteConversation = useCallback(async (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation();
     try {
-      await deleteInterviewSession(sessionId);
-      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      if (activeSessionId === sessionId) {
-        handleNewSession();
+      await deleteConversation(conversationId);
+      setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+      if (activeConversationId === conversationId) {
+        handleNewConversation();
       }
     } catch (error) {
-      console.error("Error deleting session:", error);
+      console.error("Error deleting conversation:", error);
     }
-  }, [activeSessionId, handleNewSession]);
+  }, [activeConversationId, handleNewConversation]);
 
   const sendWithScreenshot = useCallback((text: string, screenshot?: string) => {
     sendMessage(
       { parts: [{ type: "text", text }] },
       {
         body: {
-          sessionId: activeSessionId,
+          conversationId: activeConversationId,
           screenshot,
         },
       }
     );
-  }, [sendMessage, activeSessionId]);
+  }, [sendMessage, activeConversationId]);
 
   const handleAnalyze = useCallback(async () => {
     setIsCapturing(true);
@@ -214,6 +208,12 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
   const isLoading = status === "streaming" || status === "submitted" || isCapturing;
 
   const getAnalysisFromMessage = (msg: UIMessage): InterviewAnalysis | null => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const metadata = (msg as any).metadata;
+    if (metadata?.analysis) {
+      return metadata.analysis as InterviewAnalysis;
+    }
+    
     const textPart = msg.parts?.find((p) => p.type === "text");
     if (textPart && "text" in textPart) {
       const result = parsePartialJson(textPart.text);
@@ -442,12 +442,12 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
             Suggest
           </Button>
           <InterviewHistory
-            sessions={sessions}
-            onSelect={handleSwitchSession}
-            onDelete={handleDeleteSession}
+            sessions={conversations}
+            onSelect={handleSwitchConversation}
+            onDelete={handleDeleteConversation}
             disabled={isLoading}
           />
-          <Button variant="ghost" size="icon-sm" onClick={handleNewSession} disabled={isLoading}>
+          <Button variant="ghost" size="icon-sm" onClick={handleNewConversation} disabled={isLoading}>
             <Plus className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon-sm" onClick={onClose}>

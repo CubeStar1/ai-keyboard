@@ -55,6 +55,7 @@ export interface Conversation {
   updated_at: string
   created_at: string
   lastContext?: AppUsage
+  type?: "chat" | "interview" | string
 }
 
 export interface Message {
