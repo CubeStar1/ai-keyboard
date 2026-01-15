@@ -12,6 +12,7 @@ import { MessageResponse, Message, MessageContent } from "@/components/ai-elemen
 import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
 import { InterviewPromptInput } from "./interview-prompt-input";
 import { InterviewHistory } from "./interview-history";
+import { InterviewChatMessages } from "./interview-chat-messages";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import { InterviewAnalysis, Conversation as ConversationType } from "@/lib/ai/types";
 import {
@@ -232,7 +233,6 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
 
   const renderContent = () => {
     const analysis = getLatestAnalysis();
-    const isStreaming = status === "streaming" || status === "submitted";
     
     if (messages.length === 0 && !isLoading) {
       return (
@@ -247,41 +247,14 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
     }
 
     if (activeTab === "chat") {
-      const isStreaming = status === "streaming";
-
       return (
         <Conversation>
           <ConversationContent>
-            {messages.map((msg) => {
-              const textPart = msg.parts?.find((p) => p.type === "text");
-              const userText = textPart && "text" in textPart ? textPart.text : "";
-
-              if (msg.role === "user") {
-                return (
-                  <Message key={msg.id} from="user">
-                    <MessageContent>
-                      <p className="text-sm">{userText}</p>
-                    </MessageContent>
-                  </Message>
-                );
-              }
-
-              const msgAnalysis = getAnalysisFromMessage(msg);
-              if (!msgAnalysis) return null;
-
-              return (
-                <Message key={msg.id} from="assistant">
-                  <MessageContent>
-                    <MessageResponse>{msgAnalysis.idea || ""}</MessageResponse>
-                  </MessageContent>
-                </Message>
-              );
-            })}
-            {isLoading && !messages.some(m => m.role === "assistant" && getAnalysisFromMessage(m)?.idea) && (
-              <div className="flex items-center justify-center py-4">
-                <AnalyzingLoading isCapturing={isCapturing} />
-              </div>
-            )}
+            <InterviewChatMessages 
+              messages={messages} 
+              isLoading={isLoading} 
+              isCapturing={isCapturing}
+            />
           </ConversationContent>
         </Conversation>
       );
@@ -294,7 +267,7 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
         .filter(Boolean);
       
       if (allMemories.length === 0) {
-        if (isStreaming) {
+        if (status === "streaming" || status === "submitted") {
           return (
             <div className="flex flex-1 items-center justify-center">
               <MemoriesLoading />
@@ -353,26 +326,36 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
       }
     })();
 
-    if (!content && isStreaming) {
-      const renderLoadingState = () => {
-        switch (activeTab) {
-          case "idea":
-            return <IdeaLoading />;
-          case "code":
-            return <CodeLoading />;
-          case "walkthrough":
-            return <WalkthroughLoading />;
-          case "testcases":
-            return <TestCasesLoading />;
-          default:
-            return <AnalyzingLoading isCapturing={false} />;
-        }
-      };
-      return (
-        <div className="flex flex-1 items-center justify-center">
-          {renderLoadingState()}
-        </div>
-      );
+    if (!content) {
+      if (status === "submitted") {
+        return (
+          <div className="flex flex-1 items-center justify-center">
+             <AnalyzingLoading isCapturing={false} />
+          </div>
+        );
+      }
+
+      if (status === "streaming") {
+        const renderLoadingState = () => {
+          switch (activeTab) {
+            case "idea":
+              return <IdeaLoading />;
+            case "code":
+              return <CodeLoading />;
+            case "walkthrough":
+              return <WalkthroughLoading />;
+            case "testcases":
+              return <TestCasesLoading />;
+            default:
+              return <AnalyzingLoading isCapturing={false} />;
+          }
+        };
+        return (
+          <div className="flex flex-1 items-center justify-center">
+            {renderLoadingState()}
+          </div>
+        );
+      }
     }
 
     if (!content) {
