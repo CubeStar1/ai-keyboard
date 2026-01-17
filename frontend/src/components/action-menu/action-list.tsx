@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Action } from "@/lib/ai/types";
-import { memo, useRef, useEffect } from "react";
+import { memo, useRef, useEffect, useMemo } from "react";
 
 interface ActionListProps {
   actions: Action[];
@@ -21,6 +21,12 @@ export const ActionList = memo(function ActionList({
     action.label.toLowerCase().includes(filter.toLowerCase())
   );
 
+  const { agents, actionsGroup } = useMemo(() => {
+    const agents = filteredActions.filter((a) => a.group === "agent");
+    const actionsGroup = filteredActions.filter((a) => a.group !== "agent");
+    return { agents, actionsGroup };
+  }, [filteredActions]);
+
   if (filteredActions.length === 0) {
     return (
       <div className="px-4 py-8 text-center text-sm text-muted-foreground/60">
@@ -29,24 +35,49 @@ export const ActionList = memo(function ActionList({
     );
   }
 
+  const agentCount = agents.length;
+
   return (
     <div className="flex flex-col">
-      <div className="px-4 py-2">
-        <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider">
-          AI Actions
-        </span>
-      </div>
+      {agents.length > 0 && (
+        <>
+          <div className="px-4 py-2">
+            <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+              AI Agents
+            </span>
+          </div>
+          <div className="flex flex-col px-2">
+            {agents.map((action, index) => (
+              <ActionItem
+                key={action.id}
+                action={action}
+                isSelected={index === selectedIndex}
+                onClick={() => onSelect(action)}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
-      <div className="flex flex-col px-2">
-        {filteredActions.map((action, index) => (
-          <ActionItem
-            key={action.id}
-            action={action}
-            isSelected={index === selectedIndex}
-            onClick={() => onSelect(action)}
-          />
-        ))}
-      </div>
+      {actionsGroup.length > 0 && (
+        <>
+          <div className="px-4 py-2">
+            <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+              AI Actions
+            </span>
+          </div>
+          <div className="flex flex-col px-2">
+            {actionsGroup.map((action, index) => (
+              <ActionItem
+                key={action.id}
+                action={action}
+                isSelected={index + agentCount === selectedIndex}
+                onClick={() => onSelect(action)}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 });

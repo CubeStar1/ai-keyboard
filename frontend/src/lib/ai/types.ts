@@ -10,6 +10,8 @@ export type ActionType =
   | "chat"
   | string;
 
+export type ActionGroup = "agent" | "action";
+
 export interface Action {
   id: ActionType;
   label: string;
@@ -18,6 +20,7 @@ export interface Action {
   prompt?: string;
   shortcut?: string;
   isDefault?: boolean;
+  group?: ActionGroup;
 }
 
 import { LanguageModelUsage } from 'ai'
