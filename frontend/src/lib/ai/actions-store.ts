@@ -27,6 +27,14 @@ export const DEFAULT_ACTIONS: Action[] = [
     description: "LeetCode practice with hints and pattern recognition"
   },
   { 
+    id: "voice-agent", 
+    label: "Voice Agent", 
+    icon: "🎙️", 
+    shortcut: "V",
+    isDefault: true,
+    description: "Real-time voice conversation with AI"
+  },
+  { 
     id: "fix-grammar", 
     label: "Fix Grammar", 
     icon: "✍️", 

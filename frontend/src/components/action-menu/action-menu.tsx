@@ -11,6 +11,7 @@ import { ResultPanel } from "./result-panel";
 import { ChatPanel } from "./chat-panel";
 import { InterviewCopilotPanel } from "./interview-copilot-panel";
 import { PrepModePanel } from "./prep-mode-panel";
+import { VoiceAgentPanel } from "./voice-agent-panel";
 import { Kbd } from "@/components/ui/kbd";
 import { Search, Settings, Sun, Moon } from "lucide-react";
 import { generateUUID } from "@/lib/utils/generate-uuid";
@@ -34,6 +35,7 @@ export function ActionMenu({
   const [showChatMode, setShowChatMode] = useState(false);
   const [showCopilotMode, setShowCopilotMode] = useState(false);
   const [showPrepMode, setShowPrepMode] = useState(false);
+  const [showVoiceAgentMode, setShowVoiceAgentMode] = useState(false);
   const [allActions, setAllActions] = useState<Action[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const { theme, setTheme } = useTheme();
@@ -80,6 +82,11 @@ export function ActionMenu({
 
       if (action.id === "prep-mode") {
         setShowPrepMode(true);
+        return;
+      }
+
+      if (action.id === "voice-agent") {
+        setShowVoiceAgentMode(true);
         return;
       }
 
@@ -144,11 +151,12 @@ export function ActionMenu({
     setShowChatMode(false);
     setShowCopilotMode(false);
     setShowPrepMode(false);
+    setShowVoiceAgentMode(false);
   }, [setMessages]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (showChatMode || showCopilotMode || showPrepMode) return;
+      if (showChatMode || showCopilotMode || showPrepMode || showVoiceAgentMode) return;
 
       if (e.key === "Escape") {
         if (currentAction || showCustomInput) {
@@ -226,6 +234,15 @@ export function ActionMenu({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  if (showVoiceAgentMode) {
+    return (
+      <VoiceAgentPanel
+        onBack={handleBack}
+        onClose={onClose}
+      />
+    );
+  }
 
   if (showPrepMode) {
     return (
