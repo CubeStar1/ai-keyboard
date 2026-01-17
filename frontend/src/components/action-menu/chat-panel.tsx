@@ -25,7 +25,7 @@ import {
 import { ChatMessages } from "../chat/chat-messages";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import { ArrowLeft, X, MessageSquare, History, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, X, MessageSquare, History, Plus, Trash2, Volume2, VolumeX } from "lucide-react";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import {
   getConversations,
@@ -35,6 +35,10 @@ import {
 import { Conversation as ConversationType } from "@/lib/ai/types";
 import { defaultModel, models } from "@/lib/ai/models";
 import { ModelSelector } from "@/components/chat/model-selector";
+import { VoiceInputButton } from "@/components/chat/voice-input-button";
+import { VoiceModeToggle, type VoiceMode } from "@/components/chat/voice-mode-toggle";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
+import { useSpeechPlayback } from "@/hooks/use-speech-playback";
 
 interface ChatPanelProps {
   selectedText?: string;
@@ -48,7 +52,11 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
   const [activeChatId, setActiveChatId] = useState<string>(() => generateUUID());
   const [conversations, setConversations] = useState<ConversationType[]>([]);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const [voiceMode, setVoiceMode] = useState<VoiceMode>("input");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastMessageCountRef = useRef(0);
+
+  const { isPlaying, playText, stopPlayback } = useSpeechPlayback();
 
   const { messages, status, sendMessage, setMessages } = useChat({
     generateId: () => generateUUID(),
@@ -59,6 +67,58 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
       loadConversations();
     },
   });
+
+  const handleVoiceTranscription = useCallback((text: string) => {
+    if (voiceMode === "conversational") {
+      sendMessage(
+        { parts: [{ type: "text", text }] },
+        {
+          body: {
+            model: selectedModel,
+            conversationId: activeChatId,
+          },
+        }
+      );
+    } else {
+      setInput((prev) => prev + (prev ? " " : "") + text);
+      textareaRef.current?.focus();
+    }
+  }, [voiceMode, sendMessage, selectedModel, activeChatId]);
+
+  const { isRecording, isTranscribing, startRecording, stopRecording } = useAudioRecorder({
+    onTranscription: handleVoiceTranscription,
+  });
+
+  const prevStatusRef = useRef<string>(status);
+  const prevMessageCountRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (voiceMode !== "conversational") {
+      prevStatusRef.current = status;
+      return;
+    }
+
+    const assistantMessages = messages.filter((m) => m.role === "assistant");
+    const wasStreaming = prevStatusRef.current === "streaming";
+    const isNowReady = status === "ready";
+    const hasNewMessage = assistantMessages.length > prevMessageCountRef.current;
+
+    if (wasStreaming && isNowReady && hasNewMessage) {
+      const lastMessage = assistantMessages[assistantMessages.length - 1];
+      const textContent = lastMessage.parts
+        ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map((p) => p.text)
+        .join(" ");
+
+      if (textContent) {
+        playText(textContent);
+      }
+      prevMessageCountRef.current = assistantMessages.length;
+    }
+
+    prevStatusRef.current = status;
+  }, [messages, voiceMode, playText, status]);
+
 
   const loadConversations = useCallback(async () => {
     try {
@@ -78,6 +138,7 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
   const handleSwitchChat = useCallback(
     async (conversationId: string) => {
       setActiveChatId(conversationId);
+      lastMessageCountRef.current = 0;
       try {
         const msgs = await getConversationMessages(conversationId);
         setMessages(msgs);
@@ -92,6 +153,7 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
     const newId = generateUUID();
     setActiveChatId(newId);
     setMessages([]);
+    lastMessageCountRef.current = 0;
   }, [setMessages]);
 
   const handleDeleteChat = useCallback(
@@ -130,8 +192,11 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
       );
       setInput("");
     },
-    [input, sendMessage, activeChatId]
+    [input, sendMessage, activeChatId, selectedModel]
   );
+
+  const isLoading = status === "streaming" || status === "submitted";
+  const isDisabled = isLoading || isRecording || isTranscribing;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -139,18 +204,24 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
         e.preventDefault();
         onBack();
       }
+      if (e.ctrlKey && e.key === "t") {
+        e.preventDefault();
+        if (isRecording) {
+          stopRecording();
+        } else if (!isTranscribing && !isLoading) {
+          startRecording();
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onBack]);
+  }, [onBack, isRecording, isTranscribing, isLoading, startRecording, stopRecording]);
 
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
 
-  const isLoading = status === "streaming" || status === "submitted";
-  const isDisabled = isLoading;
 
   return (
     <div className="flex h-full flex-col">
@@ -165,6 +236,16 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {isPlaying && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={stopPlayback}
+              className="h-8 w-8 text-primary"
+            >
+              <VolumeX className="h-4 w-4" />
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -210,7 +291,7 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
               <MessageSquare className="mb-4 h-12 w-12 opacity-50" />
               <h3 className="font-medium">Start a conversation</h3>
               <p className="mt-1 text-sm">
-                Ask me anything or let me help with your text
+                Ask me anything or use voice input
               </p>
             </div>
           )}
@@ -229,7 +310,7 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
               onChange={handleInputChange}
               ref={textareaRef}
               value={input}
-              placeholder="Type a message..."
+              placeholder={isRecording ? "Listening..." : isTranscribing ? "Transcribing..." : "Type or speak..."}
               name="message"
               disabled={isDisabled}
             />
@@ -241,6 +322,14 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
               className="mr-2"
             />
             <div className="flex-1" />
+            <VoiceInputButton
+              isRecording={isRecording}
+              isTranscribing={isTranscribing}
+              onStartRecording={startRecording}
+              onStopRecording={stopRecording}
+              disabled={isLoading}
+              className="mr-1"
+            />
             <PromptInputSubmit
               disabled={!input.trim() || isLoading}
               status={isLoading ? "streaming" : "ready"}
@@ -250,13 +339,22 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
       </div>
 
       <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Kbd>esc</Kbd>
-          <span>back</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Kbd>esc</Kbd>
+            <span>back</span>
+          </div>
+          <VoiceModeToggle mode={voiceMode} onModeChange={setVoiceMode} />
         </div>
-        <div className="flex items-center gap-2">
-          <Kbd>↵</Kbd>
-          <span>send</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Kbd>ctrl+t</Kbd>
+            <span>mic</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Kbd>↵</Kbd>
+            <span>send</span>
+          </div>
         </div>
       </div>
     </div>
