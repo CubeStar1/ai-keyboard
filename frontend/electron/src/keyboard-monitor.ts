@@ -21,19 +21,23 @@ export class KeyboardMonitor {
     this.config = config;
   }
 
-  setContext(context: string): void {
+  setContext(context: string, immediate: boolean = false): void {
     this.buffer = context;
     this.config.onBufferUpdate?.(this.buffer);
     
     // Clear previous timer and abort pending requests
     this.clearTimerAndAbort();
     
-    // Start new debounce timer
+    // Start new debounce timer or fetch immediately
     if (this.buffer.length >= this.config.minContextLength) {
-      this.debounceTimer = setTimeout(
-        () => this.fetchSuggestion(),
-        this.config.debounceMs
-      );
+      if (immediate) {
+        this.fetchSuggestion();
+      } else {
+        this.debounceTimer = setTimeout(
+          () => this.fetchSuggestion(),
+          this.config.debounceMs
+        );
+      }
     }
   }
 

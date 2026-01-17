@@ -19,6 +19,14 @@ export async function captureLastActiveWindow(): Promise<void> {
 export async function captureSelectedText(): Promise<string> {
   const original = clipboard.readText();
 
+  // Release modifiers that might interfere (especially for Ctrl+Alt+G)
+  await keyboard.releaseKey(Key.LeftAlt);
+  await keyboard.releaseKey(Key.RightAlt);
+  await keyboard.releaseKey(Key.LeftShift);
+  await keyboard.releaseKey(Key.RightShift);
+  await keyboard.releaseKey(Key.LeftControl);
+  await keyboard.releaseKey(Key.RightControl);
+
   await keyboard.pressKey(Key.LeftControl);
   await keyboard.pressKey(Key.C);
   await keyboard.releaseKey(Key.C);

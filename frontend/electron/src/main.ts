@@ -462,7 +462,7 @@ app.whenReady().then(() => {
       
       if (selectedText.length >= 5) {
         console.log("[GhostText] Context:", selectedText.slice(0, 50));
-        keyboardMonitor?.setContext(selectedText);
+        keyboardMonitor?.setContext(selectedText, true);
       } else {
         console.log("[GhostText] Context too short:", selectedText.length);
       }
