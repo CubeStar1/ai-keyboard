@@ -14,15 +14,18 @@ import {
 const STORAGE_KEYS = {
   SUGGESTION_MODE: "ai-keyboard-suggestion-mode",
   TEXT_OUTPUT_MODE: "ai-keyboard-text-output-mode",
+  GHOST_TEXT_ENABLED: "ai-keyboard-ghost-text-enabled",
 };
 
 export function GeneralTab() {
   const [suggestionMode, setSuggestionMode] = useState<"hotkey" | "auto">("hotkey");
   const [textOutputMode, setTextOutputMode] = useState<"paste" | "typewriter">("paste");
+  const [ghostTextEnabled, setGhostTextEnabled] = useState(false);
 
   useEffect(() => {
     const storedSuggestionMode = localStorage.getItem(STORAGE_KEYS.SUGGESTION_MODE) as "hotkey" | "auto" | null;
     const storedTextOutputMode = localStorage.getItem(STORAGE_KEYS.TEXT_OUTPUT_MODE) as "paste" | "typewriter" | null;
+    const storedGhostText = localStorage.getItem(STORAGE_KEYS.GHOST_TEXT_ENABLED);
     
     if (storedSuggestionMode) {
       setSuggestionMode(storedSuggestionMode);
@@ -32,6 +35,12 @@ export function GeneralTab() {
     if (storedTextOutputMode) {
       setTextOutputMode(storedTextOutputMode);
       window.electron?.setTextOutputMode?.(storedTextOutputMode);
+    }
+
+    if (storedGhostText) {
+      const enabled = storedGhostText === "true";
+      setGhostTextEnabled(enabled);
+      window.electron?.setGhostTextEnabled?.(enabled);
     }
   }, []);
 
@@ -45,6 +54,12 @@ export function GeneralTab() {
     setTextOutputMode(mode);
     localStorage.setItem(STORAGE_KEYS.TEXT_OUTPUT_MODE, mode);
     window.electron?.setTextOutputMode?.(mode);
+  };
+
+  const handleGhostTextChange = (enabled: boolean) => {
+    setGhostTextEnabled(enabled);
+    localStorage.setItem(STORAGE_KEYS.GHOST_TEXT_ENABLED, String(enabled));
+    window.electron?.setGhostTextEnabled?.(enabled);
   };
 
   return (
@@ -149,6 +164,34 @@ export function GeneralTab() {
               <SelectItem value="typewriter">Typewriter</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </section>
+
+      <div className="h-px bg-border" />
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4">
+            <div className="mt-1">
+              <Sparkles className="w-5 h-5 text-cyan-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-base">Ghost Text Autocomplete</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {ghostTextEnabled 
+                  ? "AI suggestions appear inline as you type in any application."
+                  : "Enable to see inline AI suggestions across all Windows apps."
+                }
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Ctrl+Alt+G</kbd> to toggle
+              </p>
+            </div>
+          </div>
+          <Switch 
+            checked={ghostTextEnabled} 
+            onCheckedChange={handleGhostTextChange}
+          />
         </div>
       </section>
 

@@ -2,7 +2,7 @@ import { keyboard, Key } from "@nut-tree-fork/nut-js";
 import { clipboard } from "electron";
 import { windowManager } from "node-window-manager";
 
-keyboard.config.autoDelayMs = 2;
+keyboard.config.autoDelayMs = 5;
 
 let lastActiveWindowId: number | null = null;
 

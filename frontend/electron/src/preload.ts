@@ -58,4 +58,14 @@ contextBridge.exposeInMainWorld("electron", {
   openExternal: (url: string) => ipcRenderer.send("open-external", url),
   notifyAnalysisComplete: (success: boolean) =>
     ipcRenderer.send("analysis-complete", success),
+
+  // Ghost Text Overlay
+  on: (channel: string, callback: (event: IpcRendererEvent, ...args: unknown[]) => void) => {
+    ipcRenderer.on(channel, callback);
+  },
+  removeListener: (channel: string, callback: (event: IpcRendererEvent, ...args: unknown[]) => void) => {
+    ipcRenderer.removeListener(channel, callback);
+  },
+  getGhostTextEnabled: () => ipcRenderer.invoke("get-ghost-text-enabled"),
+  setGhostTextEnabled: (enabled: boolean) => ipcRenderer.send("set-ghost-text-enabled", enabled),
 });

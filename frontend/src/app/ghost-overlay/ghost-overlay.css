@@ -1,0 +1,60 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ghost-overlay-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+  background: transparent;
+}
+
+.ghost-text {
+  position: absolute;
+  white-space: pre;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 14px;
+  color: rgba(150, 150, 150, 0.85);
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.3),
+    0 0 2px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  user-select: none;
+  z-index: 99999;
+  animation: ghostFadeIn 0.15s ease-out;
+  max-width: 600px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ghost-hint {
+  position: absolute;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 10px;
+  color: rgba(120, 120, 120, 0.6);
+  pointer-events: none;
+  user-select: none;
+  z-index: 99998;
+  animation: ghostFadeIn 0.2s ease-out 0.1s both;
+}
+
+@keyframes ghostFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

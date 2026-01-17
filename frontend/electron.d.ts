@@ -24,8 +24,14 @@ declare global {
       captureScreen: () => Promise<string | null>;
       openExternal: (url: string) => void;
       notifyAnalysisComplete: (success: boolean) => void;
+      // Ghost Text Overlay
+      on: (channel: string, callback: (...args: unknown[]) => void) => void;
+      removeListener: (channel: string, callback: (...args: unknown[]) => void) => void;
+      getGhostTextEnabled: () => Promise<boolean>;
+      setGhostTextEnabled: (enabled: boolean) => void;
     };
   }
 }
 
 export {};
+

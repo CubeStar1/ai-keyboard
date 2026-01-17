@@ -51,5 +51,5 @@ export const models: Model[] = [
   },
 ]
 
-export const defaultModel = 'gpt-4.1-mini'
+export const defaultModel = 'gpt-5-mini'
 

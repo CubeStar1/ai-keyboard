@@ -4,8 +4,10 @@ import { readFileSync } from "fs";
 import { getPort } from "get-port-please";
 import { startServer } from "next/dist/server/lib/start-server";
 import { join } from "path";
-import { captureLastActiveWindow, captureSelectedText, sendTextToLastWindow, TextOutputMode } from "./text-handler";
+import { captureLastActiveWindow, captureSelectedText, sendTextToLastWindow, TextOutputMode, typeToLastWindow } from "./text-handler";
 import { ContextCaptureService } from "./context-capture";
+import { GhostTextOverlay } from "./ghost-overlay";
+import { KeyboardMonitor } from "./keyboard-monitor";
 
 let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
@@ -14,12 +16,48 @@ let brainPanelWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let nextJSPort: number | null = null;
 let contextCaptureService: ContextCaptureService | null = null;
+let ghostOverlay: GhostTextOverlay | null = null;
+let keyboardMonitor: KeyboardMonitor | null = null;
 
 let suggestionMode: "hotkey" | "auto" = "hotkey";
 let textOutputMode: TextOutputMode = "paste";
+let ghostTextEnabled = false;
 let clipboardWatcher: NodeJS.Timeout | null = null;
 let lastClipboardContent = "";
 let isInternalClipboardOp = false;
+
+const createKeyboardMonitor = (): KeyboardMonitor => {
+  const getPort = () => is.dev ? 3000 : (nextJSPort || 3000);
+  
+  return new KeyboardMonitor({
+    debounceMs: 500,
+    minContextLength: 10,
+    onSuggestionReady: async (suggestion) => {
+      console.log('[GhostText] Suggestion ready:', suggestion.slice(0, 30));
+      await ghostOverlay?.showSuggestion(suggestion);
+    },
+    onClear: () => {
+      ghostOverlay?.hide();
+    },
+    getSuggestion: async (context, signal) => {
+      try {
+        const response = await fetch(`http://localhost:${getPort()}/api/suggest-inline`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ context }),
+          signal,
+        });
+        const data = await response.json();
+        return data.suggestion || '';
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error('[GhostText] API error:', error);
+        }
+        return '';
+      }
+    },
+  });
+};
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
@@ -397,6 +435,64 @@ app.whenReady().then(() => {
     }
   });
 
+  // Ghost Text trigger shortcut: Ctrl+Alt+G
+  globalShortcut.register("CommandOrControl+Alt+G", async () => {
+    console.log("[GhostText] Manual trigger via Ctrl+Alt+G");
+    
+    // Initialize ghost text components if needed
+    if (!ghostTextEnabled) {
+      ghostTextEnabled = true;
+      
+      if (!ghostOverlay) {
+        ghostOverlay = new GhostTextOverlay();
+        ghostOverlay.setPort(is.dev ? 3000 : (nextJSPort || 3000));
+        ghostOverlay.create();
+      }
+      ghostOverlay.setEnabled(true);
+      
+      if (!keyboardMonitor) {
+        keyboardMonitor = createKeyboardMonitor();
+      }
+    }
+    
+    // Capture selected text and trigger suggestion
+    try {
+      await captureLastActiveWindow();
+      const selectedText = await captureSelectedText();
+      
+      if (selectedText.length >= 5) {
+        console.log("[GhostText] Context:", selectedText.slice(0, 50));
+        keyboardMonitor?.setContext(selectedText);
+      } else {
+        console.log("[GhostText] Context too short:", selectedText.length);
+      }
+    } catch (error) {
+      console.error("[GhostText] Error capturing context:", error);
+    }
+  });
+
+  // Shift+Tab to accept ghost text suggestion (avoids breaking normal Tab)
+  globalShortcut.register("Shift+Tab", async () => {
+    if (!ghostTextEnabled || !ghostOverlay?.isShowing()) return;
+    
+    const suggestion = ghostOverlay.getCurrentSuggestion();
+    console.log("[GhostText] Shift+Tab - accepting suggestion:", suggestion.slice(0, 30));
+    
+    ghostOverlay.hide();
+    keyboardMonitor?.clearBuffer();
+    
+    if (suggestion) {
+      await sendTextToLastWindow(suggestion, textOutputMode);
+      console.log("[GhostText] Suggestion inserted");
+    }
+  });
+
+  // Escape key to dismiss ghost text
+  globalShortcut.register("Shift+Escape", () => {
+    if (!ghostTextEnabled) return;
+    ghostOverlay?.hide();
+  });
+
   ipcMain.on("replace-text", async (_, text: string) => {
     try {
       console.log("Replace text requested:", text.slice(0, 50));
@@ -465,6 +561,37 @@ app.whenReady().then(() => {
     contextCaptureService?.updateConfig({ enabled });
     if (brainPanelWindow && !brainPanelWindow.isDestroyed()) {
       brainPanelWindow.webContents.send("capture-status-changed", enabled);
+    }
+  });
+
+  // Ghost Text Overlay handlers
+  ipcMain.handle("get-ghost-text-enabled", () => ghostTextEnabled);
+  
+  ipcMain.on("set-ghost-text-enabled", (_, enabled: boolean) => {
+    console.log("[Settings] Ghost text enabled:", enabled);
+    ghostTextEnabled = enabled;
+    
+    if (enabled) {
+      if (!ghostOverlay) {
+        ghostOverlay = new GhostTextOverlay();
+        ghostOverlay.setPort(is.dev ? 3000 : (nextJSPort || 3000));
+        ghostOverlay.create();
+      }
+      ghostOverlay.setEnabled(true);
+      
+      if (!keyboardMonitor) {
+        keyboardMonitor = createKeyboardMonitor();
+      }
+    } else {
+      // Properly cleanup resources when disabled
+      if (ghostOverlay) {
+        ghostOverlay.destroy();
+        ghostOverlay = null;
+      }
+      if (keyboardMonitor) {
+        keyboardMonitor.clearBuffer();
+        keyboardMonitor = null;
+      }
     }
   });
 

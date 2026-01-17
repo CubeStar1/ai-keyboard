@@ -11,6 +11,7 @@ AI Keyboard is a **system-wide AI assistant** that lives at the point of input. 
 - **Persistent Memory** - Remembers your preferences, coding style, and past interactions
 - **Invisible Typing** - AI can type directly into any app
 - **Desktop Automation** - Full Windows MCP integration for system-level control
+- **Voice Agent** - Voice-to-text and text-to-voice capabilities and live agent
 
 ## Core Features
 

@@ -23,7 +23,7 @@ const MEMORY_INSTRUCTIONS = `
 User ID: "user-1"
 
 ### BEFORE TRANSFORMING TEXT:
-**You MUST call searchMemory first** to get user context.
+**You MUST call searchMemory first** to get user context. You may have to do this multiple times in order to gain context
 Call: searchMemory({ query: "<relevant keywords from text>", userId: "user-1", limit: 5 })
 
 Use memory context to personalize your response:
@@ -31,6 +31,7 @@ Use memory context to personalize your response:
 - Writing preferences and style
 - Projects and technologies they work with
 - Any stored preferences
+- Any other context that may be relevant to the user's request such as their name, role, etc.
 
 ### AFTER TRANSFORMING TEXT:
 If the text contains new personal facts about the user, **call addMemory** to store them.
