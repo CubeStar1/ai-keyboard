@@ -1,5 +1,5 @@
 import { is } from "@electron-toolkit/utils";
-import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, screen, Tray, nativeImage, desktopCapturer } from "electron";
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, screen, Tray, nativeImage, desktopCapturer, shell } from "electron";
 import { readFileSync } from "fs";
 import { getPort } from "get-port-please";
 import { startServer } from "next/dist/server/lib/start-server";
@@ -537,6 +537,10 @@ app.whenReady().then(() => {
     settingsWindow.on("closed", () => {
       settingsWindow = null;
     });
+  });
+
+  ipcMain.on("open-external", (_, url: string) => {
+    shell.openExternal(url);
   });
 
   ipcMain.on("close-menu", () => {

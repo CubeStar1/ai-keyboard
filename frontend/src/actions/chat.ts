@@ -37,6 +37,22 @@ export async function getInterviewConversations(): Promise<Conversation[]> {
   return data as Conversation[];
 }
 
+export async function getPrepConversations(): Promise<Conversation[]> {
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("type", "prep")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching prep conversations:", error);
+    return [];
+  }
+  
+  return data as Conversation[];
+}
+
 export async function getConversationMessages(
   conversationId: string
 ): Promise<UIMessage[]> {

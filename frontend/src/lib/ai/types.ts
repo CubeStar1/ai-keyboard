@@ -82,6 +82,31 @@ export interface InterviewAnalysis {
   memories?: Array<{ memory?: string; createdAt?: string }>
 }
 
+export interface PrepAnalysis {
+  pattern?: string;
+  difficulty?: string;
+  hints?: Array<{
+    level: number;
+    content: string;
+  }>;
+  similar?: Array<{
+    name: string;
+    slug?: string;
+    reason: string;
+  }>;
+  mistakes?: Array<{
+    mistake: string;
+    correction: string;
+    pattern: string;
+  }>;
+  solution?: string;
+  complexity?: {
+    time: string;
+    space: string;
+  };
+  memories?: Array<{ memory?: string; createdAt?: string }>;
+}
+
 export interface InterviewMessage {
   id: string
   session_id: string

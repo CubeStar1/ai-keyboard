@@ -19,6 +19,14 @@ export const DEFAULT_ACTIONS: Action[] = [
     description: "AI-powered coding interview assistant"
   },
   { 
+    id: "prep-mode", 
+    label: "Prep Mode", 
+    icon: "📚", 
+    shortcut: "P",
+    isDefault: true,
+    description: "LeetCode practice with hints and pattern recognition"
+  },
+  { 
     id: "fix-grammar", 
     label: "Fix Grammar", 
     icon: "✍️", 

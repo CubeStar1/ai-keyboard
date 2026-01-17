@@ -21,6 +21,8 @@ declare global {
       getContextCaptureEnabled: () => Promise<boolean>;
       setContextCaptureEnabled: (enabled: boolean) => void;
       onAnalyzeScreenshot: (callback: (data: { dataUrl: string; timestamp: string }) => void) => () => void;
+      captureScreen: () => Promise<string | null>;
+      openExternal: (url: string) => void;
       notifyAnalysisComplete: (success: boolean) => void;
     };
   }

@@ -21,6 +21,7 @@
     "next:start": "next start",
     "postinstall": "electron-builder install-app-deps",
     "windows-mcp": "uvx windows-mcp --transport streamable-http --port 8001",
+    "leetcode-mcp": "npx -y @jinzcdev/leetcode-mcp-server --site global",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

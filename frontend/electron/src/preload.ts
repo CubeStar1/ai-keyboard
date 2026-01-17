@@ -55,6 +55,7 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.on("analyze-screenshot", handler);
     return () => ipcRenderer.removeListener("analyze-screenshot", handler);
   },
+  openExternal: (url: string) => ipcRenderer.send("open-external", url),
   notifyAnalysisComplete: (success: boolean) =>
     ipcRenderer.send("analysis-complete", success),
 });
