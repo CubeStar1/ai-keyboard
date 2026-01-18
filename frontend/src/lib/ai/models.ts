@@ -51,6 +51,6 @@ export const models: Model[] = [
   },
 ]
 
-export const defaultModel = 'gpt-5-mini'
-export const defaultFastModel = 'gpt-4o-mini'
+export const defaultModel = 'gpt-4.1-mini'
+export const defaultFastModel = 'moonshotai/kimi-k2-instruct'
 
