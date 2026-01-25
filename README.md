@@ -91,13 +91,20 @@ AI Keyboard is a **system-wide AI assistant** that lives at the point of input. 
 - Node.js 18+
 - Python 3.12+ (for memory backend)
 - [uv](https://github.com/astral-sh/uv) (Python package manager)
-- Supabase account (for vector store)
-- Optional: Neo4j instance (for knowledge graph)
+- [Supabase](https://supabase.com) account (for vector store)
+- [Neo4j](https://neo4j.com) instance (for knowledge graph)
+- [OpenAI](https://openai.com) API key
+- Google Generative AI API key (Optional)
+- XAI API key (Optional)
+- Groq API key (Optional)
+- Cerebras API key (Optional)
+- OpenRouter API key (Optional)
+- [Tavily](https://tavily.ai/) API key (Web Search)
 
 ### 1. Clone & Install Dependencies
 
 ```bash
-git clone https://github.com/your-repo/ai-keyboard.git
+git clone https://github.com/CubeStar1/ai-keyboard.git
 cd ai-keyboard
 
 # Frontend
@@ -109,44 +116,71 @@ cd ../backend
 uv sync
 ```
 
-### 2. Environment Variables
+### 2. Database Setup
+
+#### Supabase (PostgreSQL + Vector)
+
+1.  Create a new project at [supabase.com](https://supabase.com).
+2.  Go to the **SQL Editor** in your Supabase dashboard.
+3.  Copy the content of [`frontend/src/lib/supabase/migrations/schema.sql`](frontend/src/lib/supabase/migrations/schema.sql) and run it. This will create the necessary tables (`conversations`, `messages`) and functions.
+4.  Get your **Project URL** and **anon public key** from Project Settings > API.
+5.  Get your **Connection String** (URI) from Project Settings > Database > Connection string > URI.
+
+#### Neo4j (Knowledge Graph)
+
+1.  Create a free instance at [Neo4j AuraDB](https://neo4j.com/cloud/platform/aura-graph-database/).
+2.  Save the **Text File** containing your credentials (URI, username, password) when creating the instance.
+3.  Note your **Instance ID** and **Instance Name** from the dashboard.
+
+### 3. Environment Variables
+
+Create the environment files from the examples:
+
+```bash
+# Frontend
+cp frontend/env.example frontend/.env.local
+
+# Backend
+cp backend/env.example backend/.env
+```
 
 **Frontend** (`frontend/.env.local`):
 
 ```env
-# AI Providers (choose one or more)
-OPENAI_API_KEY=sk-...
-GROQ_API_KEY=gsk_...
-CEREBRAS_API_KEY=...
+NEXT_PUBLIC_SUPABASE_URL=""
+NEXT_PUBLIC_SUPABASE_ANON_KEY=""
+SUPABASE_ADMIN=""
 
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_KEY=...
+RESEND_API_KEY=""
+RESEND_DOMAIN=""
 
-# Memory Backend
-MEMORY_API_URL=http://localhost:8000
+NEXT_PUBLIC_APP_NAME="AI Keyboard"
+NEXT_PUBLIC_APP_ICON="/ai-kb-logo.png"
+
+# AI Providers
+OPENAI_API_KEY=""
+GOOGLE_GENERATIVE_AI_API_KEY=""
+XAI_API_KEY=""
+GROQ_API_KEY=""
+CEREBRAS_API_KEY=""
+OPENROUTER_API_KEY=""
+
+TAVILY_API_KEY=""
 ```
 
 **Backend** (`backend/.env`):
 
 ```env
-# Supabase Connection (for Mem0 vector store)
-SUPABASE_CONNECTION_STRING=postgresql://...
+OPENAI_API_KEY=
+SUPABASE_CONNECTION_STRING=
 
-# Optional: Neo4j for knowledge graph
-NEO4J_URL=bolt://localhost:7687
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=...
+NEO4J_URL=
+NEO4J_USERNAME=
+NEO4J_PASSWORD=
+NEO4J_DATABASE=
+AURA_INSTANCEID=
+AURA_INSTANCENAME=
 ```
-
-### 3. Database Setup
-
-Run the Supabase migrations or create tables manually:
-
-- `conversations` — Chat sessions
-- `messages` — Chat messages with metadata
-- `memories` — Mem0 vector embeddings (auto-created)
 
 ### 4. Run the Application
 
