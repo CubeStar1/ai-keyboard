@@ -99,15 +99,22 @@ export async function saveChat({
   id,
   title,
   type = "chat",
+  userId,
 }: {
   id: string;
   title: string;
   type?: string;
+  userId?: string;
 }): Promise<Conversation | null> {
   const supabase = await createSupabaseServer();
+  const payload: any = { id, title, type };
+  if (userId) {
+    payload.user_id = userId;
+  }
+  
   const { data, error } = await supabase
     .from("conversations")
-    .insert({ id, title, type })
+    .insert(payload)
     .select()
     .single();
 

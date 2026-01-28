@@ -121,6 +121,7 @@ Memory content:
             memory_type = response.choices[0].message.content.strip().upper()
             # Validate the response
             valid_types = ["LONG_TERM", "SHORT_TERM", "EPISODIC", "SEMANTIC", "PROCEDURAL"]
+            print(f"[MemoryClassifier] Classified as: {memory_type}")
             if memory_type in valid_types:
                 return memory_type
             return "LONG_TERM"  # Default fallback
@@ -229,6 +230,7 @@ async def search_memory(request: SearchMemoryRequest):
             limit=request.limit,
             filters=filters
         )
+        print(f"[search_memory] Results: {results}")
         return {"success": True, "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

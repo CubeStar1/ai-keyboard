@@ -14,12 +14,14 @@ import {
   getAllMemoriesTool,
 } from "@/lib/ai/tools/memory";
 import { generateUUID } from "@/lib/utils/generate-uuid";
+import { createSupabaseServer } from "@/lib/supabase/server";
+import { defaultFastModel } from "@/lib/ai/models";
 
-const SYSTEM_PROMPT = `You are a SENTENCE COMPLETION engine with PERSISTENT MEMORY.
+const getSystemPrompt = (userId: string) => `You are a SENTENCE COMPLETION engine with PERSISTENT MEMORY.
 
 **CRITICAL: MEMORY TOOL USAGE IS MANDATORY - NEVER SKIP THIS**
 
-User ID: "user-1"
+User ID: "${userId}"
 
 ## ⚠️ MANDATORY WORKFLOW - YOU MUST FOLLOW THIS EXACTLY ⚠️
 
@@ -27,13 +29,13 @@ User ID: "user-1"
 **Before generating ANY text, you MUST call searchMemory.**
 This is NOT optional. FAILURE TO CALL searchMemory = BROKEN BEHAVIOR.
 
-Call: searchMemory({ query: "<extract keywords from user input>", userId: "user-1", limit: 5 })
+Call: searchMemory({ query: "<extract keywords from user input>", userId: "${userId}", limit: 5 })
 
 Examples of queries to search:
-- User types "My name is" → searchMemory({ query: "name", userId: "user-1" })
-- User types "I'm working on" → searchMemory({ query: "project work", userId: "user-1" })
-- User types "My favorite" → searchMemory({ query: "favorite preferences", userId: "user-1" })
-- User types anything → searchMemory({ query: "<main topic>", userId: "user-1" })
+- User types "My name is" → searchMemory({ query: "name", userId: "${userId}" })
+- User types "I'm working on" → searchMemory({ query: "project work", userId: "${userId}" })
+- User types "My favorite" → searchMemory({ query: "favorite preferences", userId: "${userId}" })
+- User types anything → searchMemory({ query: "<main topic>", userId: "${userId}" })
 
 ### STEP 2: COMPLETE THE SENTENCE
 After receiving memory results, complete the user's sentence naturally.
@@ -45,7 +47,7 @@ After receiving memory results, complete the user's sentence naturally.
 ### STEP 3: STORE NEW FACTS (REQUIRED WHEN APPLICABLE)
 **If the user revealed ANY new information, you MUST call addMemory.**
 
-Call: addMemory({ messages: [{ role: "user", content: "<original input>" }], userId: "user-1" })
+Call: addMemory({ messages: [{ role: "user", content: "<original input>" }], userId: "${userId}" })
 
 Store when user mentions:
 - Names, roles, professions
@@ -57,12 +59,12 @@ Store when user mentions:
 ## EXAMPLES
 
 **User input:** "My name is Avinash and I"
-1. CALL searchMemory({ query: "name Avinash", userId: "user-1" })
+1. CALL searchMemory({ query: "name Avinash", userId: "${userId}" })
 2. OUTPUT: "My name is Avinash and I am a passionate developer working on innovative projects."
-3. CALL addMemory({ messages: [{ role: "user", content: "My name is Avinash" }], userId: "user-1" })
+3. CALL addMemory({ messages: [{ role: "user", content: "My name is Avinash" }], userId: "${userId}" })
 
 **User input:** "The project I'm building uses"
-1. CALL searchMemory({ query: "project building technology", userId: "user-1" })
+1. CALL searchMemory({ query: "project building technology", userId: "${userId}" })
 2. OUTPUT: "The project I'm building uses Next.js and Electron for a seamless cross-platform experience." (personalized if memory found)
 3. CALL addMemory if new tech mentioned
 
@@ -89,6 +91,17 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const userId = user.id;
+
   const modelMessages = await convertToModelMessages(messages);
   console.log("Model messages:", modelMessages);
 
@@ -96,8 +109,8 @@ export async function POST(req: Request) {
     generateId: generateUUID,
     execute: async ({ writer: dataStream }) => {
       const result = streamText({
-        model: myProvider.languageModel(model || 'gpt-oss-120b'),
-        system: SYSTEM_PROMPT,
+        model: myProvider.languageModel(model || defaultFastModel),
+        system: getSystemPrompt(userId),
         messages: modelMessages,
         tools: {
           addMemory: addMemoryTool,

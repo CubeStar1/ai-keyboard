@@ -18,6 +18,7 @@ import {
   getChatById,
   generateTitleFromUserMessage,
 } from "@/actions/chat";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 const analysisSchema = z.object({
   idea: z.string().describe("Problem understanding, key observations, approaches"),
@@ -34,13 +35,13 @@ const analysisSchema = z.object({
   })).describe("Relevant memories retrieved about the user's preferences and context")
 });
 
-const SYSTEM_PROMPT = `You are an expert Interview Copilot for technical coding interviews.
+const getSystemPrompt = (userId: string) => `You are an expert Interview Copilot for technical coding interviews.
 
 ## YOUR MISSION
 Analyze the user's screen (showing a coding problem) and provide comprehensive assistance with perfectly structured, GitHub-flavored Markdown output.
 
 ## MEMORY SYSTEM - USE PROACTIVELY
-User ID: "user-1" (always use this)
+User ID: "${userId}" (always use this)
 
 ### ALWAYS SEARCH MEMORIES FIRST:
 - Call \`searchMemory\` with queries like "coding style", "language preference", "interview prep"
@@ -120,13 +121,24 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const userId = user.id;
+
   const userMessage = messages[messages.length - 1];
 
   if (conversationId && userMessage) {
     const existingChat = await getChatById(conversationId);
     if (!existingChat) {
       const title = await generateTitleFromUserMessage(userMessage, defaultModel);
-      await saveChat({ id: conversationId, title, type: "interview" });
+      await saveChat({ id: conversationId, title, type: "interview", userId });
     }
     await saveMessages([userMessage], conversationId);
   }
@@ -152,7 +164,7 @@ export async function POST(req: Request) {
     execute: async ({ writer: dataStream }) => {
       const result = streamText({
         model: myProvider.languageModel(defaultModel),
-        system: SYSTEM_PROMPT,
+        system: getSystemPrompt(userId),
         messages: modelMessages,
         tools: {
           searchMemory: searchMemoryTool,

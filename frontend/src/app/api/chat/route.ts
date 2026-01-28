@@ -23,9 +23,10 @@ import {
   generateTitleFromUserMessage,
 } from "@/actions/chat";
 import { defaultModel } from "@/lib/ai/models";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 
-const SYSTEM_PROMPT = `You are an AI assistant integrated into an intelligent keyboard. You help users write better, answer questions, and assist with tasks. You have powerful desktop automation capabilities through Windows MCP tools.
+const getSystemPrompt = (userId: string) => `You are an AI assistant integrated into an intelligent keyboard. You help users write better, answer questions, and assist with tasks. You have powerful desktop automation capabilities through Windows MCP tools.
 
 ## WINDOWS MCP TOOLS - DESKTOP AUTOMATION
 
@@ -121,7 +122,7 @@ const SYSTEM_PROMPT = `You are an AI assistant integrated into an intelligent ke
 - For multi-step tasks, verify each step succeeded before proceeding
 
 ## MEMORY SYSTEM - USE PROACTIVELY AND FREQUENTLY
-User ID: "user-1" (always use this)
+User ID: "${userId}" (always use this)
 
 ### MEMORY TYPES - Memories are auto-classified into types:
 - **LONG_TERM**: Permanent preferences, identity, habits (name, job, likes/dislikes)
@@ -131,11 +132,11 @@ User ID: "user-1" (always use this)
 - **PROCEDURAL**: How-to knowledge, processes ("to deploy, first run...")
 
 ### SMART SEARCHING - Use memoryType filter when appropriate:
-- For preferences/identity → \`searchMemory({ query: "...", userId: "user-1", memoryType: "LONG_TERM" })\`
-- For current tasks → \`searchMemory({ query: "...", userId: "user-1", memoryType: "SHORT_TERM" })\`
-- For past events → \`searchMemory({ query: "...", userId: "user-1", memoryType: "EPISODIC" })\`
-- For knowledge → \`searchMemory({ query: "...", userId: "user-1", memoryType: "SEMANTIC" })\`
-- For procedures → \`searchMemory({ query: "...", userId: "user-1", memoryType: "PROCEDURAL" })\`
+- For preferences/identity → \`searchMemory({ query: "...", userId: "${userId}", memoryType: "LONG_TERM" })\`
+- For current tasks → \`searchMemory({ query: "...", userId: "${userId}", memoryType: "SHORT_TERM" })\`
+- For past events → \`searchMemory({ query: "...", userId: "${userId}", memoryType: "EPISODIC" })\`
+- For knowledge → \`searchMemory({ query: "...", userId: "${userId}", memoryType: "SEMANTIC" })\`
+- For procedures → \`searchMemory({ query: "...", userId: "${userId}", memoryType: "PROCEDURAL" })\`
 - For general search (all types) → omit the memoryType parameter
 
 ### ALWAYS STORE MEMORIES when the user reveals:
@@ -180,6 +181,18 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
+  // Get authenticated user
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const userId = user.id;
+
   const mcpTools = await getMCPTools();
   const modelMessages = await convertToModelMessages(messages);
 
@@ -190,7 +203,7 @@ export async function POST(req: Request) {
 
     if (!existingChat) {
       const title = await generateTitleFromUserMessage(userMessage, model || defaultModel);
-      await saveChat({ id: conversationId, title });
+      await saveChat({ id: conversationId, title, userId });
     }
 
     await saveMessages([userMessage], conversationId);
@@ -201,7 +214,7 @@ export async function POST(req: Request) {
     execute: async ({ writer: dataStream }) => {
       const result = streamText({
         model: myProvider.languageModel(model || defaultModel),
-        system: SYSTEM_PROMPT,
+        system: getSystemPrompt(userId),
         messages: modelMessages,
         tools: {
           tavilySearchTool,

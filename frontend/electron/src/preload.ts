@@ -68,4 +68,8 @@ contextBridge.exposeInMainWorld("electron", {
   },
   getGhostTextEnabled: () => ipcRenderer.invoke("get-ghost-text-enabled"),
   setGhostTextEnabled: (enabled: boolean) => ipcRenderer.send("set-ghost-text-enabled", enabled),
+
+  // User ID Persistence
+  setUserId: (userId: string) => ipcRenderer.send("set-user-id", userId),
+  getUserId: () => ipcRenderer.invoke("get-user-id"),
 });

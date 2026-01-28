@@ -81,13 +81,19 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
     const supabase = createSupabaseBrowser()
     if (!isPending) {
       startTransition(async () => {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         })
         if (error) {
           toast.error(error.message)
         } else {
+          // Store user ID in Electron store
+          if (window.electron && authData.user) {
+            window.electron.setUserId(authData.user.id);
+            console.log('User ID stored in Electron:', authData.user.id);
+          }
+          
           router.push(redirectTo)
           router.refresh()
         }

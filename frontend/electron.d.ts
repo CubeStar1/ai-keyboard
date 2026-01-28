@@ -29,6 +29,9 @@ declare global {
       removeListener: (channel: string, callback: (...args: unknown[]) => void) => void;
       getGhostTextEnabled: () => Promise<boolean>;
       setGhostTextEnabled: (enabled: boolean) => void;
+      // User ID Persistence
+      setUserId: (userId: string) => void;
+      getUserId: () => Promise<string | null>;
     };
   }
 }

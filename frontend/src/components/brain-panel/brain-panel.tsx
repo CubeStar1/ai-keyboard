@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { AnimatePresence } from "motion/react"
 import { CollapsedBrain } from "./collapsed-brain"
 import { ExpandedPanel } from "./expanded-panel"
+import useUser from "@/hooks/use-user"
 
 interface Memory {
   id: string
@@ -13,13 +14,12 @@ interface Memory {
 }
 
 const MEMORY_API_URL = "http://localhost:8000"
-const USER_ID = "user-1"
 
-async function fetchRecentMemories(): Promise<Memory[]> {
+async function fetchRecentMemories(userId: string): Promise<Memory[]> {
   const response = await fetch(`${MEMORY_API_URL}/memory/get_all`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: USER_ID }),
+    body: JSON.stringify({ user_id: userId }),
   })
   const data = await response.json()
   const results = data.memories?.results || []
@@ -31,14 +31,20 @@ export function BrainPanel() {
   const [captureEnabled, setCaptureEnabled] = useState(false)
   const [isLearning, setIsLearning] = useState(false)
   const [recentActivity, setRecentActivity] = useState<string | null>(null)
+  
+  const { data: user } = useUser()
+  const userId = user?.id
 
   const { data: memories = [], refetch } = useQuery({
-    queryKey: ["recent-memories"],
-    queryFn: fetchRecentMemories,
+    queryKey: ["recent-memories", userId],
+    queryFn: () => fetchRecentMemories(userId!),
     refetchInterval: 30000,
+    enabled: !!userId,
   })
 
   useEffect(() => {
+    if (!userId) return
+
     window.electron?.getContextCaptureEnabled?.().then(setCaptureEnabled)
 
     const cleanup = window.electron?.onMemoryStored?.((memory: string) => {
@@ -59,7 +65,7 @@ export function BrainPanel() {
       try {
         const { uploadScreenshot, deleteScreenshot } = await import('@/lib/supabase/upload-screenshot')
         
-        const uploadResult = await uploadScreenshot(data.dataUrl, USER_ID)
+        const uploadResult = await uploadScreenshot(data.dataUrl, userId)
         console.log('[BrainPanel] Uploaded to:', uploadResult.url)
         
         const response = await fetch(`${MEMORY_API_URL}/memory/add_image`, {
@@ -68,7 +74,7 @@ export function BrainPanel() {
           body: JSON.stringify({
             image_url: uploadResult.url,
             context: 'Analyze this screenshot and extract key context about what the user is working on.',
-            user_id: USER_ID,
+            user_id: userId,
             metadata: {
               source: 'screen_capture',
               captured_at: data.timestamp,
@@ -106,7 +112,7 @@ export function BrainPanel() {
       statusCleanup?.()
       analyzeCleanup?.()
     }
-  }, [refetch])
+  }, [refetch, userId])
 
   const handleToggleCapture = (enabled: boolean) => {
     setCaptureEnabled(enabled)

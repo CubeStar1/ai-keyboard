@@ -1,11 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Brain, Trash2, RefreshCw, Search, AlertCircle, Plus } from "lucide-react";
+import { 
+  Brain, 
+  Trash2, 
+  RefreshCw, 
+  Search, 
+  AlertCircle, 
+  Plus,
+  Database,
+  Clock,
+  History,
+  BookOpen,
+  ListChecks,
+  HelpCircle, 
+  Layers
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import useUser from "@/hooks/use-user";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +32,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 
 interface Memory {
   id: string;
@@ -43,24 +65,23 @@ interface SearchMemoriesResponse {
 }
 
 const MEMORY_API_URL = "http://localhost:8000";
-const USER_ID = "user-1";
 
-async function fetchAllMemories(): Promise<Memory[]> {
+async function fetchAllMemories(userId: string): Promise<Memory[]> {
   const response = await fetch(`${MEMORY_API_URL}/memory/get_all`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: USER_ID }),
+    body: JSON.stringify({ user_id: userId }),
   });
   const data: GetAllMemoriesResponse = await response.json();
   if (!data.success) throw new Error("Failed to fetch memories");
   return data.memories?.results || [];
 }
 
-async function searchMemories(query: string): Promise<Memory[]> {
+async function searchMemories({ query, userId }: { query: string; userId: string }): Promise<Memory[]> {
   const response = await fetch(`${MEMORY_API_URL}/memory/search`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, user_id: USER_ID, limit: 20 }),
+    body: JSON.stringify({ query, user_id: userId, limit: 20 }),
   });
   const data: SearchMemoriesResponse = await response.json();
   if (!data.success) throw new Error("Failed to search memories");
@@ -75,32 +96,79 @@ async function deleteMemory(memoryId: string): Promise<void> {
   if (!data.success) throw new Error("Failed to delete memory");
 }
 
-async function deleteAllMemories(): Promise<void> {
-  const response = await fetch(`${MEMORY_API_URL}/memory/user/${USER_ID}`, {
+async function deleteAllMemories(userId: string): Promise<void> {
+  const response = await fetch(`${MEMORY_API_URL}/memory/user/${userId}`, {
     method: "DELETE",
   });
   const data = await response.json();
   if (!data.success) throw new Error("Failed to delete all memories");
 }
 
-async function addMemory(content: string): Promise<void> {
+async function addMemory({ content, userId }: { content: string; userId: string }): Promise<void> {
   const response = await fetch(`${MEMORY_API_URL}/memory/add`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       messages: [{ role: "user", content }],
-      user_id: USER_ID,
+      user_id: userId,
     }),
   });
   const data = await response.json();
   if (!data.success) throw new Error("Failed to add memory");
 }
 
+const MEMORY_TYPES_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string; border: string }> = {
+  LONG_TERM: { 
+    label: "Core Facts", 
+    icon: Database, 
+    color: "text-blue-500", 
+    bg: "bg-blue-500/10", 
+    border: "border-blue-500/20" 
+  },
+  SHORT_TERM: { 
+    label: "Current Context", 
+    icon: Clock, 
+    color: "text-amber-500", 
+    bg: "bg-amber-500/10", 
+    border: "border-amber-500/20" 
+  },
+  EPISODIC: { 
+    label: "Past Events", 
+    icon: History, 
+    color: "text-purple-500", 
+    bg: "bg-purple-500/10", 
+    border: "border-purple-500/20" 
+  },
+  SEMANTIC: { 
+    label: "Knowledge Base", 
+    icon: BookOpen, 
+    color: "text-emerald-500", 
+    bg: "bg-emerald-500/10", 
+    border: "border-emerald-500/20" 
+  },
+  PROCEDURAL: { 
+    label: "Workflow Rules", 
+    icon: ListChecks, 
+    color: "text-orange-500", 
+    bg: "bg-orange-500/10", 
+    border: "border-orange-500/20" 
+  },
+  UNCATEGORIZED: { 
+    label: "Uncategorized", 
+    icon: HelpCircle, 
+    color: "text-zinc-500", 
+    bg: "bg-zinc-500/10", 
+    border: "border-zinc-500/20" 
+  }
+};
+
 export function MemoryTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [newMemory, setNewMemory] = useState("");
   const queryClient = useQueryClient();
+  const { data: user } = useUser();
+  const userId = user?.id;
 
   const {
     data: memories = [],
@@ -108,14 +176,15 @@ export function MemoryTab() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["memories", USER_ID],
-    queryFn: fetchAllMemories,
+    queryKey: ["memories", userId],
+    queryFn: () => fetchAllMemories(userId!),
+    enabled: !!userId,
   });
 
   const searchMutation = useMutation({
     mutationFn: searchMemories,
     onSuccess: (results) => {
-      queryClient.setQueryData(["memories", USER_ID], results);
+      queryClient.setQueryData(["memories", userId], results);
       setIsSearching(true);
     },
   });
@@ -123,16 +192,16 @@ export function MemoryTab() {
   const deleteMutation = useMutation({
     mutationFn: deleteMemory,
     onSuccess: (_, memoryId) => {
-      queryClient.setQueryData(["memories", USER_ID], (old: Memory[] = []) =>
+      queryClient.setQueryData(["memories", userId], (old: Memory[] = []) =>
         old.filter((m) => m.id !== memoryId)
       );
     },
   });
 
   const deleteAllMutation = useMutation({
-    mutationFn: deleteAllMemories,
+    mutationFn: () => deleteAllMemories(userId!),
     onSuccess: () => {
-      queryClient.setQueryData(["memories", USER_ID], []);
+      queryClient.setQueryData(["memories", userId], []);
     },
   });
 
@@ -145,17 +214,18 @@ export function MemoryTab() {
   });
 
   const handleAddMemory = () => {
-    if (!newMemory.trim()) return;
-    addMutation.mutate(newMemory.trim());
+    if (!newMemory.trim() || !userId) return;
+    addMutation.mutate({ content: newMemory.trim(), userId });
   };
 
   const handleSearch = () => {
+    if (!userId) return;
     if (!searchQuery.trim()) {
       setIsSearching(false);
       refetch();
       return;
     }
-    searchMutation.mutate(searchQuery);
+    searchMutation.mutate({ query: searchQuery, userId });
   };
 
   const handleClearSearch = () => {
@@ -174,6 +244,28 @@ export function MemoryTab() {
     });
   };
 
+  const groupedMemories = useMemo(() => {
+    const groups: Record<string, Memory[]> = {
+      LONG_TERM: [],
+      SHORT_TERM: [],
+      EPISODIC: [],
+      SEMANTIC: [],
+      PROCEDURAL: [],
+      UNCATEGORIZED: []
+    };
+
+    memories.forEach((memory) => {
+      const type = (memory.metadata?.memory_type as string) || "UNCATEGORIZED";
+      if (groups[type]) {
+        groups[type].push(memory);
+      } else {
+        groups["UNCATEGORIZED"].push(memory);
+      }
+    });
+
+    return groups;
+  }, [memories]);
+
   const loading = isLoading || searchMutation.isPending;
 
   return (
@@ -186,7 +278,7 @@ export function MemoryTab() {
           <div>
             <h2 className="font-semibold text-base">Memory Store</h2>
             <p className="text-xs text-muted-foreground">
-              {memories.length} memories stored for {USER_ID}
+              {memories.length} memories stored for {userId || "..."}
               {isSearching && " (filtered)"}
             </p>
           </div>
@@ -268,7 +360,7 @@ export function MemoryTab() {
         />
         <Button 
           onClick={handleAddMemory} 
-          disabled={!newMemory.trim() || addMutation.isPending}
+          disabled={!newMemory.trim() || addMutation.isPending || !userId}
           className="gap-1.5"
         >
           {addMutation.isPending ? (
@@ -306,38 +398,69 @@ export function MemoryTab() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {memories.map((memory) => (
-              <div
-                key={memory.id}
-                className="group p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {memory.memory}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1.5">
-                      {formatDate(memory.created_at)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                    onClick={() => deleteMutation.mutate(memory.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    {deleteMutation.isPending && deleteMutation.variables === memory.id ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Accordion type="multiple" defaultValue={["LONG_TERM", "SHORT_TERM", "UNCATEGORIZED", "EPISODIC", "SEMANTIC", "PROCEDURAL"]} className="space-y-4">
+            {Object.keys(MEMORY_TYPES_CONFIG).map((type) => {
+              const config = MEMORY_TYPES_CONFIG[type];
+              const groupMemories = groupedMemories[type] || [];
+              
+              if (groupMemories.length === 0) return null;
+
+              const Icon = config.icon;
+
+              return (
+                <AccordionItem key={type} value={type} className="border-none">
+                  <AccordionTrigger className="hover:no-underline py-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded-md ${config.bg} ${config.border} border`}>
+                        <Icon className={`w-4 h-4 ${config.color}`} />
+                      </div>
+                      <span className="font-medium text-sm">{config.label}</span>
+                      <Badge variant="secondary" className="ml-2 text-xs h-5 px-1.5 min-w-5 flex justify-center">
+                        {groupMemories.length}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-0">
+                    <div className="space-y-2 pl-2 border-l-2 border-zinc-100 dark:border-zinc-800 ml-3.5">
+                      {groupMemories.map((memory) => (
+                        <div
+                          key={memory.id}
+                          className="group relative p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-700 transition-colors ml-2"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-foreground leading-relaxed">
+                                {memory.memory}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1.5">
+                                {formatDate(memory.created_at)}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 absolute top-2 right-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteMutation.mutate(memory.id);
+                              }}
+                              disabled={deleteMutation.isPending}
+                            >
+                              {deleteMutation.isPending && deleteMutation.variables === memory.id ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
         )}
       </ScrollArea>
     </div>

@@ -13,6 +13,13 @@ let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 let suggestionWindow: BrowserWindow | null = null;
 let brainPanelWindow: BrowserWindow | null = null;
+import Store from "electron-store";
+
+const store = new Store();
+
+// Initialize user ID from store
+let currentUserId = store.get("userId") as string | null;
+console.log("[Main] Loaded User ID:", currentUserId);
 let tray: Tray | null = null;
 let nextJSPort: number | null = null;
 let contextCaptureService: ContextCaptureService | null = null;
@@ -44,7 +51,7 @@ const createKeyboardMonitor = (): KeyboardMonitor => {
         const response = await fetch(`http://localhost:${getPort()}/api/suggest-inline`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ context }),
+          body: JSON.stringify({ context, userId: currentUserId }),
           signal,
         });
         const data = await response.json();
@@ -593,6 +600,17 @@ app.whenReady().then(() => {
         keyboardMonitor = null;
       }
     }
+  });
+
+  // User ID Persistence Handlers
+  ipcMain.on("set-user-id", (_, userId: string) => {
+    console.log("[Auth] Setting User ID:", userId);
+    store.set("userId", userId);
+    currentUserId = userId;
+  });
+
+  ipcMain.handle("get-user-id", () => {
+    return store.get("userId");
   });
 
   ipcMain.handle("capture-screen", async () => {
