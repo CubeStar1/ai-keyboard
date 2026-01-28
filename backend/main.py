@@ -1,10 +1,12 @@
 import os
+import json
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 from mem0 import Memory
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
@@ -66,6 +68,70 @@ print("=" * 50)
 
 memory = Memory.from_config(config)
 
+# Memory type classification
+MEMORY_TYPES = Literal["LONG_TERM", "SHORT_TERM", "EPISODIC", "SEMANTIC", "PROCEDURAL"]
+
+class MemoryClassifier:
+    """LLM-based classifier for categorizing memories into types."""
+    
+    CLASSIFICATION_PROMPT = """Classify the following memory/message into exactly ONE of these memory types. Pay careful attention to temporal indicators:
+
+- SHORT_TERM: TEMPORARY states, CURRENT activities, things happening RIGHT NOW or TODAY that will change soon.
+  Examples: "I'm currently working on...", "Right now I'm doing...", "I need to finish this today", "I'm in a meeting"
+  Key indicators: "currently", "right now", "today", "at the moment", "working on", "need to"
+
+- LONG_TERM: PERMANENT personal facts, preferences, identity, habits that persist over time.
+  Examples: "I prefer dark mode", "My name is John", "I like pizza", "I'm a software engineer"
+  Key indicators: general preferences, identity statements, lasting characteristics
+
+- EPISODIC: PAST events with specific time context - things that already HAPPENED.
+  Examples: "Yesterday I had a meeting", "Last week I went to...", "I met John at the conference"
+  Key indicators: "yesterday", "last week", "last month", past tense events
+
+- SEMANTIC: General KNOWLEDGE or facts about the world (not personal preferences).
+  Examples: "Python uses indentation", "The capital of France is Paris", "React is a JS library"
+  Key indicators: objective facts, definitions, general truths
+
+- PROCEDURAL: HOW-TO knowledge, step-by-step processes, instructions.
+  Examples: "To deploy, run npm build", "The recipe requires boiling water first"
+  Key indicators: "to do X, first...", "steps to...", instructions
+
+IMPORTANT: If the message describes what someone is CURRENTLY DOING or WORKING ON, classify as SHORT_TERM, not LONG_TERM.
+
+Respond with ONLY the memory type name (e.g., SHORT_TERM), nothing else.
+
+Memory content:
+{content}"""
+    
+    def __init__(self):
+        self.client = OpenAI()
+    
+    def classify(self, content: str) -> str:
+        """Classify memory content into a memory type."""
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4.1-nano-2025-04-14",
+                messages=[
+                    {"role": "system", "content": "You are a memory classification assistant. Respond with only the memory type."},
+                    {"role": "user", "content": self.CLASSIFICATION_PROMPT.format(content=content)}
+                ],
+                max_tokens=20,
+                temperature=0
+            )
+            memory_type = response.choices[0].message.content.strip().upper()
+            # Validate the response
+            valid_types = ["LONG_TERM", "SHORT_TERM", "EPISODIC", "SEMANTIC", "PROCEDURAL"]
+            print(f"[MemoryClassifier] Classified as: {memory_type}")
+            if memory_type in valid_types:
+                return memory_type
+            return "LONG_TERM"  # Default fallback
+        except Exception as e:
+            print(f"[MemoryClassifier] Error: {e}")
+            return "LONG_TERM"  # Default on error
+
+classifier = MemoryClassifier()
+print("  Memory Classifier: enabled")
+
 class Message(BaseModel):
     role: str
     content: str
@@ -75,12 +141,14 @@ class AddMemoryRequest(BaseModel):
     messages: list[Message]
     user_id: str
     metadata: Optional[dict] = None
+    auto_classify: bool = True  # Enable auto-classification by default
 
 
 class SearchMemoryRequest(BaseModel):
     query: str
     user_id: str
     limit: Optional[int] = 10
+    memory_type: Optional[str] = None  # Filter by memory type
 
 
 class UpdateMemoryRequest(BaseModel):
@@ -94,6 +162,7 @@ class DeleteMemoryRequest(BaseModel):
 
 class GetAllMemoriesRequest(BaseModel):
     user_id: str
+    memory_type: Optional[str] = None  # Filter by memory type
 
 
 class AddImageMemoryRequest(BaseModel):
@@ -101,6 +170,7 @@ class AddImageMemoryRequest(BaseModel):
     context: Optional[str] = None
     user_id: str
     metadata: Optional[dict] = None
+    auto_classify: bool = True  # Enable auto-classification by default
 
 
 @app.get("/")
@@ -114,15 +184,29 @@ async def add_memory(request: AddMemoryRequest):
     """
     Add new memories from a conversation.
     Mem0 automatically extracts and stores relevant facts.
+    Auto-classifies memory type if auto_classify=True.
     """
     try:
         messages = [{"role": m.role, "content": m.content} for m in request.messages]
+        
+        # Prepare metadata
+        metadata = request.metadata.copy() if request.metadata else {}
+        
+        # Auto-classify if enabled and memory_type not already set
+        if request.auto_classify and "memory_type" not in metadata:
+            # Extract content for classification
+            content = " ".join([m.content for m in request.messages if isinstance(m.content, str)])
+            if content:
+                memory_type = classifier.classify(content)
+                metadata["memory_type"] = memory_type
+                print(f"[add_memory] Classified as: {memory_type}")
+        
         result = memory.add(
             messages,
             user_id=request.user_id,
-            metadata=request.metadata
+            metadata=metadata if metadata else None
         )
-        return {"success": True, "result": result}
+        return {"success": True, "result": result, "classified_type": metadata.get("memory_type")}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -132,13 +216,21 @@ async def search_memory(request: SearchMemoryRequest):
     """
     Search memories based on a query.
     Returns relevant memories with similarity scores.
+    Optionally filter by memory_type.
     """
     try:
+        # Build filters if memory_type specified
+        filters = None
+        if request.memory_type:
+            filters = {"memory_type": request.memory_type}
+        
         results = memory.search(
             request.query,
             user_id=request.user_id,
-            limit=request.limit
+            limit=request.limit,
+            filters=filters
         )
+        print(f"[search_memory] Results: {results}")
         return {"success": True, "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -146,8 +238,16 @@ async def search_memory(request: SearchMemoryRequest):
 
 @app.post("/memory/get_all")
 async def get_all_memories(request: GetAllMemoriesRequest):
+    """
+    Get all memories for a user.
+    Optionally filter by memory_type.
+    """
     try:
-        memories = memory.get_all(user_id=request.user_id)
+        filters = None
+        if request.memory_type:
+            filters = {"memory_type": request.memory_type}
+        
+        memories = memory.get_all(user_id=request.user_id, filters=filters)
         return {"success": True, "memories": memories}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -155,6 +255,10 @@ async def get_all_memories(request: GetAllMemoriesRequest):
 
 @app.post("/memory/add_image")
 async def add_image_memory(request: AddImageMemoryRequest):
+    """
+    Add an image-based memory.
+    Auto-classifies memory type if auto_classify=True.
+    """
     try:
         messages = []
         
@@ -169,16 +273,24 @@ async def add_image_memory(request: AddImageMemoryRequest):
             }
         })
         
+        # Prepare metadata
+        metadata = request.metadata.copy() if request.metadata else {"source": "screen_capture"}
+        
+        # Auto-classify based on context if provided
+        if request.auto_classify and "memory_type" not in metadata and request.context:
+            memory_type = classifier.classify(request.context)
+            metadata["memory_type"] = memory_type
+            print(f"[add_image] Classified as: {memory_type}")
+        
         print(f"[add_image] Processing image URL: {request.image_url[:100]}...")
-        print(f"[add_image] Messages: {messages}")
         
         result = memory.add(
             messages,
             user_id=request.user_id,
-            metadata=request.metadata or {"source": "screen_capture"}
+            metadata=metadata
         )
         print(f"[add_image] Result: {result}")
-        return {"success": True, "result": result}
+        return {"success": True, "result": result, "classified_type": metadata.get("memory_type")}
     except Exception as e:
         print(f"[add_image] ERROR: {e}")
         import traceback

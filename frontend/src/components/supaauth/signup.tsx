@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils'
 import { verifyOtp } from '@/actions/auth'
 import { toast } from 'sonner'
 import { usePathname, useRouter } from 'next/navigation'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 const FormSchema = z
   .object({
     email: z.string().email({
@@ -241,10 +242,22 @@ export default function SignUp({ redirectTo }: { redirectTo: string }) {
                   otp: value,
                   type: 'email',
                 })
-                const { error } = JSON.parse(res)
+                const { error, data } = JSON.parse(res)
                 if (error) {
                   setVerifyStatus('failed')
                 } else {
+                  // Store user ID in Electron store if available in response
+                  // Note: verifyOtp might need adjustments to return user data or we assume session is set
+                  // If session is set, we might need to get user from supabase or context.
+                  // For now, let's assume successful verification sets the session and we can get user.
+                  const supabase = createSupabaseBrowser()
+                  const { data: { user } } = await supabase.auth.getUser()
+                  
+                  if (user && window.electron) {
+                    window.electron.setUserId(user.id)
+                    console.log('User ID stored in Electron:', user.id)
+                  }
+                  
                   setVerifyStatus('success')
                   router.push(redirectTo)
                 }

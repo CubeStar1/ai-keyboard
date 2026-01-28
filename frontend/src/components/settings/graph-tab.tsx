@@ -7,6 +7,7 @@ import type { Node, Relationship, HitTargets } from "@neo4j-nvl/base";
 import type { MouseEventCallbacks } from "@neo4j-nvl/react";
 import { Brain, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import useUser from "@/hooks/use-user";
 
 const InteractiveNvlWrapper = dynamic(
   () => import("@neo4j-nvl/react").then((mod) => mod.InteractiveNvlWrapper),
@@ -28,13 +29,12 @@ interface MemoriesResponse {
 }
 
 const MEMORY_API_URL = "http://localhost:8000";
-const USER_ID = "user-1";
 
-async function fetchMemoriesWithRelations(): Promise<Relation[]> {
+async function fetchMemoriesWithRelations(userId: string): Promise<Relation[]> {
   const response = await fetch(`${MEMORY_API_URL}/memory/get_all`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: USER_ID }),
+    body: JSON.stringify({ user_id: userId }),
   });
   const data: MemoriesResponse = await response.json();
   if (!data.success) throw new Error("Failed to fetch memories");
@@ -56,10 +56,13 @@ const NODE_COLORS = [
 
 export function GraphTab() {
   const nvlRef = useRef<any>(null);
+  const { data: user } = useUser();
+  const userId = user?.id;
   
   const { data: relations = [], isLoading, error, refetch } = useQuery({
-    queryKey: ["memory-relations", USER_ID],
-    queryFn: fetchMemoriesWithRelations,
+    queryKey: ["memory-relations", userId],
+    queryFn: () => fetchMemoriesWithRelations(userId!),
+    enabled: !!userId,
   });
 
   const { nodes, rels } = useMemo(() => {

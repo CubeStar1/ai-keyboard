@@ -52,7 +52,7 @@ async function waitForFileAvailability(
 
 export async function uploadScreenshot(
   imageDataUrl: string,
-  userId: string = 'user-1'
+  userId: string
 ): Promise<ScreenshotUploadResult> {
   const supabase = createSupabaseBrowser()
   const blob = base64ToBlob(imageDataUrl)
@@ -97,7 +97,7 @@ export async function deleteScreenshot(path: string): Promise<void> {
 }
 
 export async function cleanupOldScreenshots(
-  userId: string = 'user-1',
+  userId: string,
   maxAgeHours: number = 24
 ): Promise<void> {
   const supabase = createSupabaseBrowser()

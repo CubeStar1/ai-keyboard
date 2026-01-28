@@ -16,8 +16,9 @@ import {
 } from "@/lib/ai/tools/memory";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import { defaultModel } from "@/lib/ai/models";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
-const SYSTEM_PROMPT = `You are an intelligent inline writing assistant integrated into an AI-powered keyboard. Your role is to provide seamless, contextually-aware text completions and transformations that feel natural and personalized.
+const getSystemPrompt = (userId: string) => `You are an intelligent inline writing assistant integrated into an AI-powered keyboard. Your role is to provide seamless, contextually-aware text completions and transformations that feel natural and personalized.
 
 ## YOUR CAPABILITIES
 - Smart text completion and continuation
@@ -36,7 +37,7 @@ const SYSTEM_PROMPT = `You are an intelligent inline writing assistant integrate
 4. **Be Intelligent**: Infer intent from context and deliver exactly what the user needs
 
 ## MEMORY SYSTEM - USE PROACTIVELY
-User ID: "user-1" (always use this)
+User ID: "${userId}" (always use this)
 
 ### BEFORE ANY COMPLETION:
 **You MUST call searchMemory first** to personalize your response.
@@ -48,7 +49,7 @@ Search for relevant context:
 - Projects they're working on
 - Any previous corrections or feedback
 
-Call: searchMemory({ query: "<relevant keywords from the text>", userId: "user-1", limit: 5 })
+Call: searchMemory({ query: "<relevant keywords from the text>", userId: "${userId}", limit: 5 })
 
 ### DURING COMPLETION:
 Use the retrieved memories to:
@@ -59,7 +60,7 @@ Use the retrieved memories to:
 
 ### STORE NEW INSIGHTS:
 If the text reveals new facts about the user, store them:
-Call: addMemory({ messages: [{ role: "user", content: "<fact to store>" }], userId: "user-1" })
+Call: addMemory({ messages: [{ role: "user", content: "<fact to store>" }], userId: "${userId}" })
 
 Store things like:
 - Corrections they make to your output (LEARN from these!)
@@ -82,6 +83,7 @@ Use tavilySearchTool when you need:
 
 REMEMBER: Search memory before EVERY response. This is NOT optional.`;
 
+
 export async function POST(req: Request) {
   const body = await req.json();
   const { messages, action, customPrompt } = body as {
@@ -94,12 +96,23 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const userId = user.id;
+
   console.log("API received:", { action, customPrompt: customPrompt?.slice(0, 50) });
 
   // Use custom prompt if provided, otherwise use the comprehensive system prompt
   const systemPrompt = customPrompt 
-    ? `${customPrompt}\n\n${SYSTEM_PROMPT}` 
-    : SYSTEM_PROMPT;
+    ? `${customPrompt}\n\n${getSystemPrompt(userId)}` 
+    : getSystemPrompt(userId);
 
   const modelMessages = await convertToModelMessages(messages);
 

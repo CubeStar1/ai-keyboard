@@ -7,8 +7,9 @@ import {
   getAllMemoriesTool,
 } from "@/lib/ai/tools/memory";
 import { DEFAULT_VOICE_TOOLS, OPENAI_VOICE } from "@/lib/ai/voice";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
-const SYSTEM_PROMPT = `You are a voice AI assistant integrated into an intelligent keyboard. You help users with tasks, answer questions, and assist with desktop automation. Speak naturally and conversationally - avoid markdown, bullet points, or code blocks in your responses.
+const getSystemPrompt = (userId: string) => `You are a voice AI assistant integrated into an intelligent keyboard. You help users with tasks, answer questions, and assist with desktop automation. Speak naturally and conversationally - avoid markdown, bullet points, or code blocks in your responses.
 
 ## WINDOWS MCP TOOLS - DESKTOP AUTOMATION
 
@@ -104,7 +105,7 @@ const SYSTEM_PROMPT = `You are a voice AI assistant integrated into an intellige
 - For multi-step tasks, verify each step succeeded before proceeding
 
 ## MEMORY SYSTEM - USE PROACTIVELY AND FREQUENTLY
-User ID: "user-1" (always use this)
+User ID: "${userId}" (always use this)
 
 ### ALWAYS STORE MEMORIES when the user reveals:
 - Name, role, job title, company, or team
@@ -148,6 +149,17 @@ export async function POST(request: NextRequest) {
       model?: string;
       voice?: string;
     };
+
+    const supabase = await createSupabaseServer();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const userId = user.id;
 
     const mcpTools = await getMCPTools();
     const mcpToolNames = Object.keys(mcpTools);
@@ -197,7 +209,7 @@ export async function POST(request: NextRequest) {
             },
             userId: {
               type: "string",
-              description: "The unique identifier for the user. Use 'user-1'.",
+              description: `The unique identifier for the user. Use '${userId}'.`,
             },
           },
           required: ["messages", "userId"],
@@ -216,7 +228,7 @@ export async function POST(request: NextRequest) {
             },
             userId: {
               type: "string",
-              description: "The unique identifier for the user. Use 'user-1'.",
+              description: `The unique identifier for the user. Use '${userId}'.`,
             },
             limit: {
               type: "number",
@@ -235,7 +247,7 @@ export async function POST(request: NextRequest) {
           properties: {
             userId: {
               type: "string",
-              description: "The unique identifier for the user. Use 'user-1'.",
+              description: `The unique identifier for the user. Use '${userId}'.`,
             },
           },
           required: ["userId"],
@@ -260,7 +272,7 @@ export async function POST(request: NextRequest) {
         input_audio_transcription: {
           model: "whisper-1",
         },
-        instructions: SYSTEM_PROMPT,
+        instructions: getSystemPrompt(userId),
         tools: bindingTools,
       }),
     });

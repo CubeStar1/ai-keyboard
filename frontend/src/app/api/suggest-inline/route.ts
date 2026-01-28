@@ -9,7 +9,7 @@ import {
   getAllMemoriesTool,
 } from '@/lib/ai/tools/memory';
 
-const SYSTEM_PROMPT = `You are a seamless inline text completion assistant integrated into an intelligent keyboard. Your job is to predict and complete text naturally, as if you are the user's own thoughts.
+const getSystemPrompt = (userId: string) => `You are a seamless inline text completion assistant integrated into an intelligent keyboard. Your job is to predict and complete text naturally, as if you are the user's own thoughts.
 
 ## CORE BEHAVIOR
 - Complete text with 5-15 words maximum
@@ -25,16 +25,16 @@ const SYSTEM_PROMPT = `You are a seamless inline text completion assistant integ
 - If creative → match the creative voice
 
 ## MEMORY SYSTEM - USE PROACTIVELY
-User ID: "user-1" (always use this)
+User ID: "${userId}" (always use this)
 
 ### BEFORE COMPLETING TEXT:
 **Call searchMemory first** to personalize your completion.
 Search for: user's writing style, preferences, tech stack, projects, and context.
-Call: searchMemory({ query: "<keywords from context>", userId: "user-1", limit: 3 })
+Call: searchMemory({ query: "<keywords from context>", userId: "${userId}", limit: 3 })
 
 ### STORE NEW INSIGHTS:
 If the text reveals new facts about the user, store them:
-Call: addMemory({ messages: [{ role: "user", content: "<fact>" }], userId: "user-1" })
+Call: addMemory({ messages: [{ role: "user", content: "<fact>" }], userId: "${userId}" })
 
 ## WEB SEARCH
 Use tavilySearchTool when completing text that references:
@@ -53,15 +53,19 @@ IMPORTANT: Search memory before completing. This is NOT optional.`;
 
 export async function POST(req: Request) {
   try {
-    const { context } = await req.json();
+    const { context, userId } = await req.json();
     
     if (!context || context.length < 5) {
       return NextResponse.json({ suggestion: '' });
     }
 
+    if (!userId) {
+      return new Response("Unauthorized: Missing User ID", { status: 401 });
+    }
+
     const result = await generateText({
       model: myProvider.languageModel(defaultFastModel),
-      system: SYSTEM_PROMPT,
+      system: getSystemPrompt(userId),
       prompt: `Complete this text naturally with 5-15 words. Return ONLY the completion, no quotes, no explanations:
 
 "${context.slice(-200)}"`,

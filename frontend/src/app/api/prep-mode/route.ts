@@ -18,6 +18,7 @@ import {
   getChatById,
   generateTitleFromUserMessage,
 } from "@/actions/chat";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 const prepSchema = z.object({
   pattern: z.string().describe("Algorithm pattern: Sliding Window, Two Pointer, DP, BFS/DFS, Backtracking, etc."),
@@ -47,7 +48,7 @@ const prepSchema = z.object({
   }))
 });
 
-const SYSTEM_PROMPT = `You are an expert LeetCode Practice Coach and Pair Programmer helping users learn and improve their coding skills.
+const getSystemPrompt = (userId: string) => `You are an expert LeetCode Practice Coach and Pair Programmer helping users learn and improve their coding skills.
 
 ## YOUR MISSION
 Analyze the coding problem from the user's screen and provide structured learning assistance. Focus on TEACHING, not just solving. You can also help users write code, open LeetCode problems, and guide them through the coding process.
@@ -108,7 +109,7 @@ You have powerful desktop automation tools to help users solve problems directly
 **NEVER open a new LeetCode tab unless the user explicitly asks to open a different problem.**
 
 ## MEMORY SYSTEM
-User ID: "user-1" (always use this)
+User ID: "${userId}" (always use this)
 
 ### ALWAYS SEARCH MEMORIES FIRST:
 - Call \`searchMemory\` for: "coding mistakes", "weak patterns", "preferred language", "solved problems"
@@ -192,13 +193,24 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const userId = user.id;
+
   const userMessage = messages[messages.length - 1];
 
   if (conversationId && userMessage) {
     const existingChat = await getChatById(conversationId);
     if (!existingChat) {
       const title = await generateTitleFromUserMessage(userMessage, defaultModel);
-      await saveChat({ id: conversationId, title, type: "prep" });
+      await saveChat({ id: conversationId, title, type: "prep", userId });
     }
     await saveMessages([userMessage], conversationId);
   }
@@ -225,7 +237,7 @@ export async function POST(req: Request) {
     execute: async ({ writer: dataStream }) => {
       const result = streamText({
         model: myProvider.languageModel(defaultModel),
-        system: SYSTEM_PROMPT,
+        system: getSystemPrompt(userId),
         messages: modelMessages,
         tools: {
           searchMemory: searchMemoryTool,

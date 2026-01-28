@@ -41,7 +41,7 @@ export const addMemoryTool = tool({
 
 export const searchMemoryTool = tool({
   description:
-    'Search through stored memories to find relevant information about the user. Use this to recall past conversations, preferences, and context.',
+    'Search through stored memories to find relevant information about the user. Use memoryType filter to search specific categories: LONG_TERM (preferences, identity), SHORT_TERM (current tasks), EPISODIC (past events), SEMANTIC (knowledge), PROCEDURAL (how-to).',
   inputSchema: z.object({
     query: z.string().describe('The search query to find relevant memories.'),
     userId: z.string().describe('The unique identifier for the user.'),
@@ -50,10 +50,14 @@ export const searchMemoryTool = tool({
       .optional()
       .default(10)
       .describe('Maximum number of memories to return.'),
+    memoryType: z
+      .enum(['LONG_TERM', 'SHORT_TERM', 'EPISODIC', 'SEMANTIC', 'PROCEDURAL'])
+      .optional()
+      .describe('Filter by memory type. LONG_TERM=preferences/identity, SHORT_TERM=current tasks, EPISODIC=past events, SEMANTIC=knowledge, PROCEDURAL=how-to.'),
   }),
-  execute: async ({ query, userId, limit }) => {
+  execute: async ({ query, userId, limit, memoryType }) => {
     try {
-      const result = await searchMemory(query, userId, limit)
+      const result = await searchMemory(query, userId, limit, memoryType)
       return JSON.stringify(result)
     } catch (error) {
       console.error('Error searching memory:', error)
