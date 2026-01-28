@@ -123,6 +123,21 @@ const SYSTEM_PROMPT = `You are an AI assistant integrated into an intelligent ke
 ## MEMORY SYSTEM - USE PROACTIVELY AND FREQUENTLY
 User ID: "user-1" (always use this)
 
+### MEMORY TYPES - Memories are auto-classified into types:
+- **LONG_TERM**: Permanent preferences, identity, habits (name, job, likes/dislikes)
+- **SHORT_TERM**: Current tasks, temporary context ("working on X right now")
+- **EPISODIC**: Past events with time context ("yesterday I...", "last week...")
+- **SEMANTIC**: General knowledge, facts ("Python uses indentation")
+- **PROCEDURAL**: How-to knowledge, processes ("to deploy, first run...")
+
+### SMART SEARCHING - Use memoryType filter when appropriate:
+- For preferences/identity → \`searchMemory({ query: "...", userId: "user-1", memoryType: "LONG_TERM" })\`
+- For current tasks → \`searchMemory({ query: "...", userId: "user-1", memoryType: "SHORT_TERM" })\`
+- For past events → \`searchMemory({ query: "...", userId: "user-1", memoryType: "EPISODIC" })\`
+- For knowledge → \`searchMemory({ query: "...", userId: "user-1", memoryType: "SEMANTIC" })\`
+- For procedures → \`searchMemory({ query: "...", userId: "user-1", memoryType: "PROCEDURAL" })\`
+- For general search (all types) → omit the memoryType parameter
+
 ### ALWAYS STORE MEMORIES when the user reveals:
 - Name, role, job title, company, or team
 - Email preferences: signature, tone, common recipients

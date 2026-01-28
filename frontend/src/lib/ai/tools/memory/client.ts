@@ -36,18 +36,28 @@ export async function addMemory(
   return response.data
 }
 
-export async function searchMemory(query: string, userId: string, limit = 10) {
+export async function searchMemory(
+  query: string,
+  userId: string,
+  limit = 10,
+  memoryType?: 'LONG_TERM' | 'SHORT_TERM' | 'EPISODIC' | 'SEMANTIC' | 'PROCEDURAL'
+) {
   const response = await memoryClient.post('/memory/search', {
     query,
     user_id: userId,
     limit,
+    memory_type: memoryType,
   })
   return response.data
 }
 
-export async function getAllMemories(userId: string) {
+export async function getAllMemories(
+  userId: string,
+  memoryType?: 'LONG_TERM' | 'SHORT_TERM' | 'EPISODIC' | 'SEMANTIC' | 'PROCEDURAL'
+) {
   const response = await memoryClient.post('/memory/get_all', {
     user_id: userId,
+    memory_type: memoryType,
   })
   return response.data
 }
