@@ -68,8 +68,8 @@ const createKeyboardMonitor = (): KeyboardMonitor => {
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 800,
+    width: 500,
+    height: 500,
     minWidth: 400,
     minHeight: 400,
     maxWidth: 800,

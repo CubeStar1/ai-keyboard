@@ -91,6 +91,7 @@ AI Keyboard is a **system-wide AI assistant** that lives at the point of input. 
 - Node.js 18+
 - Python 3.12+ (for memory backend)
 - [uv](https://github.com/astral-sh/uv) (Python package manager)
+- [pnpm](https://pnpm.io) (for package management)
 - [Supabase](https://supabase.com) account (for vector store)
 - [Neo4j](https://neo4j.com) instance (for knowledge graph)
 - [OpenAI](https://openai.com) API key
@@ -109,7 +110,7 @@ cd ai-keyboard
 
 # Frontend
 cd frontend
-npm install
+pnpm install
 
 # Backend
 cd ../backend
