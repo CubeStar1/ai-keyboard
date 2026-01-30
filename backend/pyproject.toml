@@ -11,4 +11,5 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "vecs>=0.4.5",
     "httpx>=0.28.1",
+    "chromadb>=1.4.1",
 ]

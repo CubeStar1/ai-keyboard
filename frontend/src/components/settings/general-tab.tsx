@@ -257,13 +257,13 @@ export function GeneralTab() {
                   <Slider
                     value={[ghostTextAutoTriggerDelay]}
                     onValueChange={handleAutoTriggerDelayChange}
-                    min={1}
+                    min={0.1}
                     max={10}
-                    step={1}
+                    step={0.1}
                     className="w-full"
                   />
                   <div className="flex justify-between mt-1">
-                    <span className="text-[10px] text-muted-foreground">Fast (1s)</span>
+                    <span className="text-[10px] text-muted-foreground">Fast (0.5s)</span>
                     <span className="text-[10px] text-muted-foreground">Slow (10s)</span>
                   </div>
                 </div>
