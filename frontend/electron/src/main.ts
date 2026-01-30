@@ -8,6 +8,7 @@ import { captureLastActiveWindow, captureSelectedText, sendTextToLastWindow, Tex
 import { ContextCaptureService } from "./context-capture";
 import { GhostTextOverlay } from "./ghost-overlay";
 import { KeyboardMonitor } from "./keyboard-monitor";
+import { KeystrokeListener } from "./keystroke-listener";
 
 let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
@@ -20,6 +21,7 @@ const store = new Store();
 // Initialize user ID from store
 let currentUserId = store.get("userId") as string | null;
 console.log("[Main] Loaded User ID:", currentUserId);
+
 let tray: Tray | null = null;
 let nextJSPort: number | null = null;
 let contextCaptureService: ContextCaptureService | null = null;
@@ -29,6 +31,9 @@ let keyboardMonitor: KeyboardMonitor | null = null;
 let suggestionMode: "hotkey" | "auto" = "hotkey";
 let textOutputMode: TextOutputMode = "paste";
 let ghostTextEnabled = false;
+let ghostTextAutoTrigger = false;
+let ghostTextAutoTriggerDelay = 3000;
+let keystrokeListener: KeystrokeListener | null = null;
 let clipboardWatcher: NodeJS.Timeout | null = null;
 let lastClipboardContent = "";
 let isInternalClipboardOp = false;
@@ -64,6 +69,34 @@ const createKeyboardMonitor = (): KeyboardMonitor => {
       }
     },
   });
+};
+
+/**
+ * Start global keystroke listening for auto-trigger.
+ */
+const startKeystrokeListening = (): void => {
+  if (keystrokeListener?.isRunning()) return;
+  
+  if (!keystrokeListener) {
+    keystrokeListener = new KeystrokeListener();
+  }
+  
+  keystrokeListener.onKeystroke((char, isBackspace) => {
+    keyboardMonitor?.appendCharacter(char, isBackspace);
+  });
+  
+  keystrokeListener.start();
+  console.log('[GhostText] Keystroke listening started for auto-trigger');
+};
+
+/**
+ * Stop global keystroke listening.
+ */
+const stopKeystrokeListening = (): void => {
+  if (keystrokeListener) {
+    keystrokeListener.stop();
+    console.log('[GhostText] Keystroke listening stopped');
+  }
 };
 
 const createWindow = () => {
@@ -372,6 +405,8 @@ app.whenReady().then(() => {
     }
   });
 
+  // Ghost text settings will be synced from frontend via SettingsSynchronizer on page load
+
   globalShortcut.register("CommandOrControl+\\", async () => {
     if (!mainWindow) return;
 
@@ -482,6 +517,9 @@ app.whenReady().then(() => {
   globalShortcut.register("Shift+Tab", async () => {
     if (!ghostTextEnabled || !ghostOverlay?.isShowing()) return;
     
+    // Pause keystroke listener to prevent interference during acceptance
+    keystrokeListener?.pause();
+    
     const suggestion = ghostOverlay.getCurrentSuggestion();
     console.log("[GhostText] Shift+Tab - accepting suggestion:", suggestion.slice(0, 30));
     
@@ -489,9 +527,17 @@ app.whenReady().then(() => {
     keyboardMonitor?.clearBuffer();
     
     if (suggestion) {
+      // Capture the current active window before sending text
+      // This is essential for auto-trigger mode where we haven't captured the window earlier
+      await captureLastActiveWindow();
       await sendTextToLastWindow(suggestion, textOutputMode);
       console.log("[GhostText] Suggestion inserted");
     }
+    
+    // Resume keystroke listener after a short delay
+    setTimeout(() => {
+      keystrokeListener?.resume();
+    }, 100);
   });
 
   // Escape key to dismiss ghost text
@@ -589,8 +635,20 @@ app.whenReady().then(() => {
       if (!keyboardMonitor) {
         keyboardMonitor = createKeyboardMonitor();
       }
+      
+      // Restore auto-trigger settings
+      keyboardMonitor.setAutoTriggerConfig({
+        enabled: ghostTextAutoTrigger,
+        delayMs: ghostTextAutoTriggerDelay,
+      });
+      
+      // Start keystroke listener if auto-trigger is enabled
+      if (ghostTextAutoTrigger) {
+        startKeystrokeListening();
+      }
     } else {
       // Properly cleanup resources when disabled
+      stopKeystrokeListening();
       if (ghostOverlay) {
         ghostOverlay.destroy();
         ghostOverlay = null;
@@ -599,6 +657,35 @@ app.whenReady().then(() => {
         keyboardMonitor.clearBuffer();
         keyboardMonitor = null;
       }
+    }
+  });
+
+  // Ghost Text Auto-Trigger handlers
+  ipcMain.handle("get-ghost-text-auto-trigger", () => ghostTextAutoTrigger);
+  
+  ipcMain.on("set-ghost-text-auto-trigger", (_, enabled: boolean) => {
+    console.log("[Settings] Ghost text auto-trigger:", enabled);
+    ghostTextAutoTrigger = enabled;
+    
+    if (keyboardMonitor) {
+      keyboardMonitor.setAutoTriggerConfig({ enabled });
+    }
+    
+    if (enabled && ghostTextEnabled) {
+      startKeystrokeListening();
+    } else {
+      stopKeystrokeListening();
+    }
+  });
+
+  ipcMain.handle("get-ghost-text-auto-trigger-delay", () => ghostTextAutoTriggerDelay);
+  
+  ipcMain.on("set-ghost-text-auto-trigger-delay", (_, delayMs: number) => {
+    console.log("[Settings] Ghost text auto-trigger delay:", delayMs);
+    ghostTextAutoTriggerDelay = delayMs;
+    
+    if (keyboardMonitor) {
+      keyboardMonitor.setAutoTriggerConfig({ delayMs });
     }
   });
 

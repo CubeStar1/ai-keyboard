@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Hand, Keyboard, Power, Sparkles, Type } from "lucide-react";
+import { Check, Clock, Hand, Keyboard, Power, Sparkles, Type } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectTrigger,
@@ -15,12 +16,16 @@ const STORAGE_KEYS = {
   SUGGESTION_MODE: "ai-keyboard-suggestion-mode",
   TEXT_OUTPUT_MODE: "ai-keyboard-text-output-mode",
   GHOST_TEXT_ENABLED: "ai-keyboard-ghost-text-enabled",
+  GHOST_TEXT_AUTO_TRIGGER: "ai-keyboard-ghost-text-auto-trigger",
+  GHOST_TEXT_AUTO_TRIGGER_DELAY: "ai-keyboard-ghost-text-auto-trigger-delay",
 };
 
 export function GeneralTab() {
   const [suggestionMode, setSuggestionMode] = useState<"hotkey" | "auto">("hotkey");
   const [textOutputMode, setTextOutputMode] = useState<"paste" | "typewriter">("paste");
   const [ghostTextEnabled, setGhostTextEnabled] = useState(false);
+  const [ghostTextAutoTrigger, setGhostTextAutoTrigger] = useState(false);
+  const [ghostTextAutoTriggerDelay, setGhostTextAutoTriggerDelay] = useState(3); // seconds
 
   useEffect(() => {
     const storedSuggestionMode = localStorage.getItem(STORAGE_KEYS.SUGGESTION_MODE) as "hotkey" | "auto" | null;
@@ -42,6 +47,22 @@ export function GeneralTab() {
       setGhostTextEnabled(enabled);
       window.electron?.setGhostTextEnabled?.(enabled);
     }
+
+    // Load auto-trigger settings
+    const storedAutoTrigger = localStorage.getItem(STORAGE_KEYS.GHOST_TEXT_AUTO_TRIGGER);
+    const storedAutoTriggerDelay = localStorage.getItem(STORAGE_KEYS.GHOST_TEXT_AUTO_TRIGGER_DELAY);
+    
+    if (storedAutoTrigger) {
+      const enabled = storedAutoTrigger === "true";
+      setGhostTextAutoTrigger(enabled);
+      window.electron?.setGhostTextAutoTrigger?.(enabled);
+    }
+    
+    if (storedAutoTriggerDelay) {
+      const delay = parseInt(storedAutoTriggerDelay, 10);
+      setGhostTextAutoTriggerDelay(delay);
+      window.electron?.setGhostTextAutoTriggerDelay?.(delay * 1000); // Convert to ms
+    }
   }, []);
 
   const handleModeChange = (mode: "hotkey" | "auto") => {
@@ -60,6 +81,19 @@ export function GeneralTab() {
     setGhostTextEnabled(enabled);
     localStorage.setItem(STORAGE_KEYS.GHOST_TEXT_ENABLED, String(enabled));
     window.electron?.setGhostTextEnabled?.(enabled);
+  };
+
+  const handleAutoTriggerChange = (enabled: boolean) => {
+    setGhostTextAutoTrigger(enabled);
+    localStorage.setItem(STORAGE_KEYS.GHOST_TEXT_AUTO_TRIGGER, String(enabled));
+    window.electron?.setGhostTextAutoTrigger?.(enabled);
+  };
+
+  const handleAutoTriggerDelayChange = (value: number[]) => {
+    const delay = value[0];
+    setGhostTextAutoTriggerDelay(delay);
+    localStorage.setItem(STORAGE_KEYS.GHOST_TEXT_AUTO_TRIGGER_DELAY, String(delay));
+    window.electron?.setGhostTextAutoTriggerDelay?.(delay * 1000); // Convert to ms
   };
 
   return (
@@ -184,7 +218,7 @@ export function GeneralTab() {
                 }
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Ctrl+Alt+G</kbd> to toggle
+                Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Ctrl+Alt+G</kbd> to trigger manually
               </p>
             </div>
           </div>
@@ -193,6 +227,50 @@ export function GeneralTab() {
             onCheckedChange={handleGhostTextChange}
           />
         </div>
+
+        {/* Auto-trigger options - only shown when ghost text is enabled */}
+        {ghostTextEnabled && (
+          <div className="ml-9 space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-3">
+                <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-sm">Auto-trigger suggestions</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Suggestions appear automatically when you pause typing
+                  </p>
+                </div>
+              </div>
+              <Switch 
+                checked={ghostTextAutoTrigger} 
+                onCheckedChange={handleAutoTriggerChange}
+              />
+            </div>
+
+            {ghostTextAutoTrigger && (
+              <div className="flex items-center gap-4 ml-7">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-muted-foreground">Auto Trigger Delay</span>
+                    <span className="text-xs font-medium">{ghostTextAutoTriggerDelay}s</span>
+                  </div>
+                  <Slider
+                    value={[ghostTextAutoTriggerDelay]}
+                    onValueChange={handleAutoTriggerDelayChange}
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between mt-1">
+                    <span className="text-[10px] text-muted-foreground">Fast (1s)</span>
+                    <span className="text-[10px] text-muted-foreground">Slow (10s)</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       <div className="h-px bg-border" />

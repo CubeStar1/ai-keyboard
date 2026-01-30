@@ -6,54 +6,61 @@ import { tavilySearchTool } from '@/lib/ai/tools/tavily-search';
 import {
   addMemoryTool,
   searchMemoryTool,
-  getAllMemoriesTool,
 } from '@/lib/ai/tools/memory';
+import { searchMemory } from '@/lib/ai/tools/memory/client';
 
-const getSystemPrompt = (userId: string) => `You are a seamless inline text completion assistant integrated into an intelligent keyboard. Your job is to predict and complete text naturally, as if you are the user's own thoughts.
+const getSystemPrompt = (userId: string, relevantMemories: string[]) => `You are a seamless inline text and code completion assistant. Your job is to predict and complete what the user is typing naturally, whether it's prose, messages, or code.
 
-## CORE BEHAVIOR
-- Complete text with 5-15 words maximum
-- Sound natural and contextually appropriate  
-- Match the user's tone, style, and vocabulary
-- Never add explanations, quotes, or metadata
-- Continue exactly from where the user left off
+## WHAT YOU DO
+- Complete text naturally from where the user left off
+- Complete code with proper syntax, function calls, and patterns
+- Use stored memories to personalize completions when relevant
+- Provide helpful, substantial completions (not too short!)
 
-## STYLE MATCHING
-- If formal → maintain formal language
-- If casual → keep it conversational
-- If technical → use appropriate terminology
-- If creative → match the creative voice
+## COMPLETION LENGTH
+- For prose/messages: 5-20 words is ideal
+- For code: complete the logical unit (function call, statement, block)
+- Don't be stingy - provide useful, complete suggestions
 
-## MEMORY SYSTEM - USE PROACTIVELY
-User ID: "${userId}" (always use this)
+## USER CONTEXT (Long-term Memory)
+${relevantMemories.length > 0 ? relevantMemories.map(m => `- ${m}`).join('\n') : 'No relevant memories found.'}
 
-### BEFORE COMPLETING TEXT:
-**Call searchMemory first** to personalize your completion.
-Search for: user's writing style, preferences, tech stack, projects, and context.
-Call: searchMemory({ query: "<keywords from context>", userId: "${userId}", limit: 3 })
+## TOOLS FOR MISSING CONTEXT  
+Use \`searchMemory\` to find more context when needed.
+**User ID:** "${userId}" (REQUIRED for tool calls)
 
-### STORE NEW INSIGHTS:
-If the text reveals new facts about the user, store them:
-Call: addMemory({ messages: [{ role: "user", content: "<fact>" }], userId: "${userId}" })
+Example: \`searchMemory({ query: "project details", userId: "${userId}" })\`
 
-## WEB SEARCH
-Use tavilySearchTool when completing text that references:
-- Current events or recent information
-- Technical facts that need verification
-- Specific data points or statistics
+## CODE COMPLETION
+When completing code:
+- Match the language and coding style
+- Complete function calls with likely parameters
+- Suggest common patterns (error handling, async/await, etc.)
+- Complete import statements, variable declarations, etc.
 
-## OUTPUT RULES
-- Return ONLY the completion text
-- No quotation marks
-- No explanations or preambles
-- No "Here's the completion:" type prefixes
-- Just the natural continuation of their text
+Examples:
+- \`const user = await\` → \`prisma.user.findUnique({ where: { id: userId } })\`
+- \`function handle\` → \`Submit(event: React.FormEvent) {\`
+- \`import { useState\` → \`, useEffect } from 'react'\`
 
-IMPORTANT: Search memory before completing. This is NOT optional.`;
+## TEXT COMPLETION  
+When completing prose:
+- Use memories for personal details (names, projects, preferences)
+- Generic completions are fine when no memory applies
+- Only avoid making up SPECIFIC facts not in memories (dates, names you don't know)
+
+Examples:
+- "I'll send you the" → "updated files by end of day"
+- "The meeting with" + memory of "dev team standup" → "the dev team went well"
+
+## OUTPUT
+Return ONLY the completion text. No quotes, no explanations, no prefixes.`;
+
 
 export async function POST(req: Request) {
   try {
     const { context, userId } = await req.json();
+    console.log('[suggest-inline] Context:', context);
     
     if (!context || context.length < 5) {
       return NextResponse.json({ suggestion: '' });
@@ -63,22 +70,36 @@ export async function POST(req: Request) {
       return new Response("Unauthorized: Missing User ID", { status: 401 });
     }
 
+    const lastChunk = context.slice(-200);
+    let relevantMemories: string[] = [];
+    
+    try {
+      const memoryResult = await searchMemory(lastChunk, userId, 5);
+      
+      const memories = memoryResult?.results?.results || [];
+      
+      if (Array.isArray(memories)) {
+        relevantMemories = memories.map((m: any) => m.memory);
+      }
+    } catch (err) {
+      console.warn('[suggest-inline] Failed to fetch memories:', err);
+    }
+    console.log('[suggest-inline] Relevant memories:', relevantMemories);
     const result = await generateText({
       model: myProvider.languageModel(defaultFastModel),
-      system: getSystemPrompt(userId),
-      prompt: `Complete this text naturally with 5-15 words. Return ONLY the completion, no quotes, no explanations:
+      system: getSystemPrompt(userId, relevantMemories),
+      prompt: `Complete this naturally. For prose: 5-20 words. For code: complete the statement/block. Use memories when relevant. Return ONLY the completion:
 
-"${context.slice(-200)}"`,
+"${lastChunk}"`,
+      temperature: 0.5,
       tools: {
         tavilySearchTool,
         addMemory: addMemoryTool,
         searchMemory: searchMemoryTool,
-        getAllMemories: getAllMemoriesTool,
       },
       stopWhen: stepCountIs(5),
     });
 
-    // Clean up the suggestion
     let suggestion = result.text.trim();
 
     console.log('[suggest-inline] Context:', context.slice(-50), '→', suggestion.slice(0, 50));

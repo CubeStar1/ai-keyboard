@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
+import { SettingsSynchronizer } from "@/components/settings-synchronizer";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -26,6 +27,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <SettingsSynchronizer />
             {children}
           </ThemeProvider>
         </QueryProvider>
@@ -33,4 +35,3 @@ export default function RootLayout({
     </html>
   );
 }
-

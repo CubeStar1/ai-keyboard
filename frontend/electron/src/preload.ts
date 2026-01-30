@@ -68,6 +68,12 @@ contextBridge.exposeInMainWorld("electron", {
   },
   getGhostTextEnabled: () => ipcRenderer.invoke("get-ghost-text-enabled"),
   setGhostTextEnabled: (enabled: boolean) => ipcRenderer.send("set-ghost-text-enabled", enabled),
+  
+  // Ghost Text Auto-Trigger
+  getGhostTextAutoTrigger: () => ipcRenderer.invoke("get-ghost-text-auto-trigger"),
+  setGhostTextAutoTrigger: (enabled: boolean) => ipcRenderer.send("set-ghost-text-auto-trigger", enabled),
+  getGhostTextAutoTriggerDelay: () => ipcRenderer.invoke("get-ghost-text-auto-trigger-delay"),
+  setGhostTextAutoTriggerDelay: (delayMs: number) => ipcRenderer.send("set-ghost-text-auto-trigger-delay", delayMs),
 
   // User ID Persistence
   setUserId: (userId: string) => ipcRenderer.send("set-user-id", userId),
