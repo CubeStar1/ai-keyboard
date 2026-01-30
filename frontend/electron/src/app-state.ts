@@ -1,0 +1,68 @@
+import { BrowserWindow, Tray } from "electron";
+import Store from "electron-store";
+import type { ContextCaptureService } from "./services/context-capture";
+import type { GhostTextOverlay } from "./services/ghost-overlay";
+import type { KeyboardMonitor } from "./services/keyboard-monitor";
+import type { KeystrokeListener } from "./services/keystroke-listener";
+import type { TextOutputMode } from "./services/text-handler";
+
+const store = new Store();
+
+export interface AppStateType {
+  mainWindow: BrowserWindow | null;
+  settingsWindow: BrowserWindow | null;
+  suggestionWindow: BrowserWindow | null;
+  brainPanelWindow: BrowserWindow | null;
+  tray: Tray | null;
+  nextJSPort: number | null;
+
+  contextCaptureService: ContextCaptureService | null;
+  ghostOverlay: GhostTextOverlay | null;
+  keyboardMonitor: KeyboardMonitor | null;
+  keystrokeListener: KeystrokeListener | null;
+
+  suggestionMode: "hotkey" | "auto";
+  textOutputMode: TextOutputMode;
+  ghostTextEnabled: boolean;
+  ghostTextAutoTrigger: boolean;
+  ghostTextAutoTriggerDelay: number;
+
+  clipboardWatcher: NodeJS.Timeout | null;
+  lastClipboardContent: string;
+  isInternalClipboardOp: boolean;
+
+  currentUserId: string | null;
+}
+
+export const AppState: AppStateType = {
+  mainWindow: null,
+  settingsWindow: null,
+  suggestionWindow: null,
+  brainPanelWindow: null,
+  tray: null,
+  nextJSPort: null,
+
+  contextCaptureService: null,
+  ghostOverlay: null,
+  keyboardMonitor: null,
+  keystrokeListener: null,
+
+  suggestionMode: "hotkey",
+  textOutputMode: "paste",
+  ghostTextEnabled: false,
+  ghostTextAutoTrigger: false,
+  ghostTextAutoTriggerDelay: 3000,
+
+  clipboardWatcher: null,
+  lastClipboardContent: "",
+  isInternalClipboardOp: false,
+
+  currentUserId: store.get("userId") as string | null,
+};
+
+export const getStore = () => store;
+
+export const getPort = (): number => {
+  const { is } = require("@electron-toolkit/utils");
+  return is.dev ? 3000 : (AppState.nextJSPort || 3000);
+};

@@ -2,10 +2,6 @@ import { uIOhook, UiohookKey, UiohookKeyboardEvent } from 'uiohook-napi';
 
 export type KeystrokeCallback = (key: string, isBackspace: boolean) => void;
 
-/**
- * Global keystroke listener using uiohook-napi.
- * Captures keystrokes system-wide for auto-trigger ghost text suggestions.
- */
 export class KeystrokeListener {
   private callback: KeystrokeCallback | null = null;
   private isListening = false;
@@ -95,9 +91,6 @@ export class KeystrokeListener {
     this.handleKeyDown = this.handleKeyDown.bind(this);
   }
 
-  /**
-   * Start listening for global keystrokes.
-   */
   start(): void {
     if (this.isListening) return;
     
@@ -107,9 +100,6 @@ export class KeystrokeListener {
     console.log('[KeystrokeListener] Started global keystroke capture');
   }
 
-  /**
-   * Stop listening for keystrokes.
-   */
   stop(): void {
     if (!this.isListening) return;
     
@@ -119,38 +109,22 @@ export class KeystrokeListener {
     console.log('[KeystrokeListener] Stopped global keystroke capture');
   }
 
-  /**
-   * Set the callback for keystroke events.
-   */
   onKeystroke(callback: KeystrokeCallback): void {
     this.callback = callback;
   }
 
-  /**
-   * Check if currently listening.
-   */
   isRunning(): boolean {
     return this.isListening;
   }
 
-  /**
-   * Get time since last keystroke in milliseconds.
-   */
   getTimeSinceLastKey(): number {
     return Date.now() - this.lastKeyTime;
   }
 
-  /**
-   * Pause keystroke capture temporarily.
-   * Used when accepting suggestions to avoid interference.
-   */
   pause(): void {
     this.isPaused = true;
   }
 
-  /**
-   * Resume keystroke capture after pausing.
-   */
   resume(): void {
     this.isPaused = false;
   }
@@ -195,9 +169,6 @@ export class KeystrokeListener {
     }
   }
 
-  /**
-   * Cleanup resources.
-   */
   destroy(): void {
     this.stop();
     this.callback = null;

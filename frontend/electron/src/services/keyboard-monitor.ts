@@ -31,9 +31,6 @@ export class KeyboardMonitor {
     this.config = config;
   }
 
-  /**
-   * Set auto-trigger configuration.
-   */
   setAutoTriggerConfig(config: Partial<AutoTriggerConfig>): void {
     this.autoTriggerConfig = { ...this.autoTriggerConfig, ...config };
     console.log('[KeyboardMonitor] Auto-trigger config updated:', this.autoTriggerConfig);
@@ -44,17 +41,10 @@ export class KeyboardMonitor {
     }
   }
 
-  /**
-   * Get current auto-trigger configuration.
-   */
   getAutoTriggerConfig(): AutoTriggerConfig {
     return { ...this.autoTriggerConfig };
   }
 
-  /**
-   * Append a character to the buffer (used for real-time keystroke capture).
-   * This resets the auto-trigger debounce timer.
-   */
   appendCharacter(char: string, isBackspace: boolean = false): void {
     // Hide current suggestion when user continues typing
     if (this.currentSuggestion) {
@@ -78,10 +68,6 @@ export class KeyboardMonitor {
     }
   }
 
-  /**
-   * Reset the auto-trigger debounce timer.
-   * Called on each keystroke to wait for pause.
-   */
   private resetAutoTriggerTimer(): void {
     this.clearAutoTriggerTimer();
     
@@ -93,9 +79,6 @@ export class KeyboardMonitor {
     }
   }
 
-  /**
-   * Clear the auto-trigger timer.
-   */
   private clearAutoTriggerTimer(): void {
     if (this.autoTriggerTimer) {
       clearTimeout(this.autoTriggerTimer);
