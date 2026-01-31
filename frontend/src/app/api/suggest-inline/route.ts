@@ -9,7 +9,8 @@ import {
 } from '@/lib/ai/tools/memory';
 import { searchMemory } from '@/lib/ai/tools/memory/client';
 
-const getSystemPrompt = (userId: string, relevantMemories: string[]) => `You are a seamless inline text and code completion assistant. Your job is to predict and complete what the user is typing naturally, whether it's prose, messages, or code.
+const getSystemPrompt = (userId: string, relevantMemories: string[], currentDate: string) => `You are a seamless inline text and code completion assistant. Your job is to predict and complete what the user is typing naturally, whether it's prose, messages, or code.
+Current Date: ${currentDate}
 
 ## WHAT YOU DO
 - Complete text naturally from where the user left off
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
     console.log('[suggest-inline] Relevant memories:', relevantMemories);
     const result = await generateText({
       model: myProvider.languageModel(defaultFastModel),
-      system: getSystemPrompt(userId, relevantMemories),
+      system: getSystemPrompt(userId, relevantMemories, new Date().toLocaleString()),
       prompt: `Complete this naturally. For prose: 5-20 words. For code: complete the statement/block. Use memories when relevant. Return ONLY the completion:
 
 "${lastChunk}"`,

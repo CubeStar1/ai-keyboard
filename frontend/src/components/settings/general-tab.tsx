@@ -257,7 +257,7 @@ export function GeneralTab() {
                   <Slider
                     value={[ghostTextAutoTriggerDelay]}
                     onValueChange={handleAutoTriggerDelayChange}
-                    min={0.1}
+                    min={0.5}
                     max={10}
                     step={0.1}
                     className="w-full"
