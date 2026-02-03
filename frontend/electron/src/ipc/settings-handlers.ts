@@ -50,7 +50,7 @@ export const registerSettingsHandlers = (): void => {
 
     if (enabled) {
       initializeGhostText();
-      
+
       if (AppState.keyboardMonitor) {
         AppState.keyboardMonitor.setAutoTriggerConfig({
           enabled: AppState.ghostTextAutoTrigger,
@@ -102,5 +102,60 @@ export const registerSettingsHandlers = (): void => {
 
   ipcMain.handle("get-user-id", () => {
     return getStore().get("userId");
+  });
+
+  // Cached Memories for Inline Suggestions
+  ipcMain.on("set-cached-memories", (_, memories: string[]) => {
+    console.log("[Settings] Caching", memories.length, "memories for inline suggestions");
+    getStore().set("cachedMemories", memories);
+    AppState.cachedMemories = memories;
+  });
+
+  ipcMain.handle("get-cached-memories", () => {
+    return AppState.cachedMemories;
+  });
+
+  // Content Protection (Invisibility to screen recorders)
+  ipcMain.handle("get-content-protection-enabled", () => AppState.contentProtectionEnabled);
+
+  ipcMain.on("set-content-protection-enabled", (_, enabled: boolean) => {
+    console.log("[Settings] Content protection (invisibility):", enabled);
+    AppState.contentProtectionEnabled = enabled;
+
+    // Apply to all windows
+    const windows = [
+      AppState.mainWindow,
+      AppState.settingsWindow,
+      AppState.suggestionWindow,
+      AppState.brainPanelWindow,
+    ];
+
+    windows.forEach((win) => {
+      if (win && !win.isDestroyed()) {
+        win.setContentProtection(enabled);
+      }
+    });
+
+    // Also apply to ghost overlay windows
+    if (AppState.ghostOverlay) {
+      AppState.ghostOverlay.setContentProtection(enabled);
+    }
+  });
+
+  // Default Model Settings
+  ipcMain.handle("get-default-model", () => AppState.defaultModel);
+
+  ipcMain.on("set-default-model", (_, model: string) => {
+    console.log("[Settings] Default model changed to:", model);
+    getStore().set("defaultModel", model);
+    AppState.defaultModel = model;
+  });
+
+  ipcMain.handle("get-default-fast-model", () => AppState.defaultFastModel);
+
+  ipcMain.on("set-default-fast-model", (_, model: string) => {
+    console.log("[Settings] Default fast model changed to:", model);
+    getStore().set("defaultFastModel", model);
+    AppState.defaultFastModel = model;
   });
 };

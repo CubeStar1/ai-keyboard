@@ -27,6 +27,7 @@ export const titleGenerationModels: Record<string, string> = {
   'gpt-5.1-codex-mini': 'gpt-4o-mini',
   'gpt-5.1': 'gpt-4o-mini',
   'gpt-5-nano': 'gpt-4o-mini',
+  'gpt-4.1-nano': 'gpt-4.1-nano',
 
   'gemini-2.5-flash': 'gemini-2.5-flash',
   'gemini-3-flash-preview': 'gemini-2.5-flash',
@@ -47,6 +48,7 @@ export const titleGenerationModels: Record<string, string> = {
 
   'openai/gpt-oss-20b-lmstudio': 'openai/gpt-oss-20b-lmstudio',
   'qwen/qwen3-4b-thinking-2507-lmstudio': 'qwen/qwen3-4b-thinking-2507-lmstudio',
+  'qwen/qwen3-4b': 'qwen/qwen3-4b',
 }
 
 export function getTitleGenerationModel(selectedModel: string): string {
@@ -108,6 +110,7 @@ export function createMyProvider(
     languageModels: {
       'gpt-4o-mini': openai('gpt-4o-mini'),
       'gpt-4.1-mini': openai('gpt-4.1-mini'),
+      'gpt-4.1-nano': openai('gpt-4.1-nano'),
       'gpt-5-mini': openai('gpt-5-mini'),
       'gpt-5.1-codex-mini': openai('gpt-5.1-codex-mini'),
       'gpt-5.1': openai('gpt-5.1'),
@@ -123,9 +126,11 @@ export function createMyProvider(
 
       'llama3.1-8b': cerebrasProvider('llama3.1-8b'),
       'gpt-oss-120b': cerebrasProvider('gpt-oss-120b'),
+      'qwen-3-32b': cerebrasProvider('qwen-3-32b'),
 
       'openai/gpt-oss-20b-lmstudio': lmstudio('openai/gpt-oss-20b'),
       'qwen/qwen3-4b-thinking-2507-lmstudio': lmstudio('qwen/qwen3-4b-thinking-2507'),
+      'qwen/qwen3-4b': lmstudio('qwen/qwen3-4b'),
     },
     fallbackProvider: openai,
   })

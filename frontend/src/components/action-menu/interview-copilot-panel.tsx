@@ -6,7 +6,7 @@ import { UIMessage, DefaultChatTransport } from "ai";
 import { parsePartialJson } from "@ai-sdk/ui-utils";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import { ArrowLeft, X, Target, Camera, RefreshCw, Lightbulb, Code, FileText, FlaskConical, Brain, Plus, MessageSquare } from "lucide-react";
+import { ArrowLeft, X, Target, Camera, RefreshCw, Lightbulb, Code, FileText, FlaskConical, Brain, Plus, MessageSquare, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MessageResponse, Message, MessageContent } from "@/components/ai-elements/message";
 import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
@@ -27,11 +27,13 @@ import {
   WalkthroughLoading,
   TestCasesLoading,
   MemoriesLoading,
+  MistakesLoading,
 } from "./loading-states";
 
 interface InterviewCopilotPanelProps {
   onBack: () => void;
   onClose: () => void;
+  onReplace?: (text: string) => void;
 }
 
 const TABS = [
@@ -40,12 +42,13 @@ const TABS = [
   { id: "code", label: "Code", shortcut: "3", Icon: Code },
   { id: "walkthrough", label: "Walkthrough", shortcut: "4", Icon: FileText },
   { id: "testcases", label: "TC", shortcut: "5", Icon: FlaskConical },
-  { id: "memories", label: "Memories", shortcut: "6", Icon: Brain },
+  { id: "mistakes", label: "Mistakes", shortcut: "6", Icon: AlertTriangle },
+  { id: "memories", label: "Memories", shortcut: "7", Icon: Brain },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
-export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanelProps) {
+export function InterviewCopilotPanel({ onBack, onClose, onReplace }: InterviewCopilotPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("chat");
   const [isCapturing, setIsCapturing] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string>(() => generateUUID());
@@ -176,9 +179,41 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
     }
   }, [sendWithScreenshot]);
 
+  const isLoading = status === "streaming" || status === "submitted" || isCapturing;
+
+  const getCurrentTabContent = useCallback((): string => {
+    const analysis = getLatestAnalysis();
+    if (!analysis) return "";
+    
+    switch (activeTab) {
+      case "idea":
+        return analysis.idea || "";
+      case "code":
+        return analysis.code || "";
+      case "walkthrough":
+        return analysis.walkthrough || "";
+      case "testcases":
+        if (analysis.testCases?.length) {
+          const header = "| Input | Output | Reason |\n|---|---|---|\n";
+          const rows = analysis.testCases.map(tc => `| \`${tc?.input}\` | \`${tc?.output}\` | ${tc?.reason} |`).join("\n");
+          return header + rows;
+        }
+        return "";
+      default:
+        return "";
+    }
+  }, [activeTab, messages]);
+
+  const handlePaste = useCallback(() => {
+    const content = getCurrentTabContent();
+    if (content && onReplace) {
+      onReplace(content);
+    }
+  }, [getCurrentTabContent, onReplace]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key >= "1" && e.key <= "6") {
+      if (e.ctrlKey && e.key >= "1" && e.key <= "7") {
         e.preventDefault();
         const tabIndex = parseInt(e.key) - 1;
         setActiveTab(TABS[tabIndex].id);
@@ -208,13 +243,25 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
         onBack();
         return;
       }
+
+      // Handle Enter key to paste content on content tabs (not chat, mistakes, or memories)
+      if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const contentTabs = ["idea", "code", "walkthrough", "testcases"];
+        if (contentTabs.includes(activeTab)) {
+          const content = getCurrentTabContent();
+          if (content && !isLoading) {
+            e.preventDefault();
+            handlePaste();
+            return;
+          }
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleAnalyze, handleUpdate, handleCodeSuggestion, handleNewConversation, onBack]);
+  }, [handleAnalyze, handleUpdate, handleCodeSuggestion, handleNewConversation, onBack, activeTab, getCurrentTabContent, isLoading, handlePaste]);
 
-  const isLoading = status === "streaming" || status === "submitted" || isCapturing;
 
   const getAnalysisFromMessage = (msg: UIMessage): InterviewAnalysis | null => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -265,6 +312,65 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
             />
           </ConversationContent>
         </Conversation>
+      );
+    }
+
+    if (activeTab === "mistakes") {
+      const allMistakes = messages
+        .filter(m => m.role === "assistant")
+        .flatMap(m => getAnalysisFromMessage(m)?.mistakes || [])
+        .filter(Boolean);
+      
+      if (allMistakes.length === 0) {
+        if (status === "streaming" || status === "submitted") {
+          return (
+            <div className="flex flex-1 items-center justify-center">
+              <MistakesLoading />
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex flex-1 flex-col items-center justify-center text-center text-muted-foreground p-6">
+            <AlertTriangle className="mb-4 h-10 w-10 opacity-40" />
+            <p className="text-sm">No past mistakes found for this pattern.</p>
+            <p className="mt-1 text-xs">Great job, or this is your first attempt!</p>
+          </div>
+        );
+      }
+      
+      return (
+        <div className="flex-1 overflow-auto p-4">
+          <div className="space-y-4">
+            {allMistakes.map((item, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border/50 bg-card/50 p-4 backdrop-blur-sm"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                    <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div>
+                      <p className="text-sm font-medium text-destructive">Mistake</p>
+                      <p className="text-sm text-foreground">{item?.mistake}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-600 dark:text-green-400">Correction</p>
+                      <p className="text-sm text-foreground">{item?.correction}</p>
+                    </div>
+                    <div className="pt-1">
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                        {item?.pattern}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       );
     }
 
@@ -488,9 +594,15 @@ export function InterviewCopilotPanel({ onBack, onClose }: InterviewCopilotPanel
             <span>update</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Kbd>Ctrl+1-6</Kbd>
-          <span>tabs</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Kbd>Ctrl+1-7</Kbd>
+            <span>tabs</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Kbd>↵</Kbd>
+            <span>paste</span>
+          </div>
         </div>
       </div>
     </div>

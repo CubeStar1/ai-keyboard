@@ -31,6 +31,9 @@ export const createSuggestionWindow = (initialContext: string): BrowserWindow =>
     },
   });
 
+  // Make window invisible to screen recorders/sharing (uses WDA_EXCLUDEFROMCAPTURE on Windows)
+  AppState.suggestionWindow.setContentProtection(true);
+
   if (is.dev) {
     AppState.suggestionWindow.loadURL("http://localhost:3000/suggestion");
   } else {

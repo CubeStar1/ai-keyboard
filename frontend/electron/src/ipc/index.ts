@@ -2,15 +2,22 @@ import { registerTextHandlers } from "./text-handlers";
 import { registerSettingsHandlers } from "./settings-handlers";
 import { registerWindowHandlers } from "./window-handlers";
 import { registerCaptureHandlers } from "./capture-handlers";
+import { registerTranscribeHandlers } from "./transcribe-handlers";
+import { registerVoiceAgentHandlers } from "./voice-agent-handlers";
 
 export const registerAllIpcHandlers = (): void => {
   registerTextHandlers();
   registerSettingsHandlers();
   registerWindowHandlers();
   registerCaptureHandlers();
+  registerTranscribeHandlers();
+  registerVoiceAgentHandlers();
 };
 
 export { registerTextHandlers } from "./text-handlers";
 export { registerSettingsHandlers } from "./settings-handlers";
 export { registerWindowHandlers } from "./window-handlers";
 export { registerCaptureHandlers } from "./capture-handlers";
+export { registerTranscribeHandlers } from "./transcribe-handlers";
+export { registerVoiceAgentHandlers, toggleVoiceAgentPanel } from "./voice-agent-handlers";
+

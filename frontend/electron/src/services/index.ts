@@ -3,9 +3,11 @@ import { clipboard } from "electron";
 import { AppState, getPort } from "../app-state";
 import { ContextCaptureService } from "./context-capture";
 import { GhostTextOverlay } from "./ghost-overlay";
+import { InterviewGhostService } from "./interview-ghost";
 import { KeyboardMonitor } from "./keyboard-monitor";
 import { KeystrokeListener } from "./keystroke-listener";
 import { showSuggestionForContext } from "../windows/suggestion-window";
+import { TranscribeService } from "./transcribe-service";
 
 export const createKeyboardMonitor = (): KeyboardMonitor => {
   return new KeyboardMonitor({
@@ -23,7 +25,11 @@ export const createKeyboardMonitor = (): KeyboardMonitor => {
         const response = await fetch(`http://localhost:${getPort()}/api/suggest-inline`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ context, userId: AppState.currentUserId }),
+          body: JSON.stringify({
+            context,
+            userId: AppState.currentUserId,
+            cachedMemories: AppState.cachedMemories,
+          }),
           signal,
         });
         const data = await response.json();
@@ -122,11 +128,41 @@ export const initializeContextCapture = (): void => {
   });
 };
 
+export const initializeInterviewGhost = (): void => {
+  if (!AppState.interviewGhostService) {
+    AppState.interviewGhostService = new InterviewGhostService({
+      onSuggestionReady: async (code) => {
+        console.log('[InterviewGhost] Code suggestion ready, showing ghost text');
+        await AppState.ghostOverlay?.showSuggestion(code);
+      },
+      onLoading: (loading) => {
+        if (loading) {
+          AppState.ghostOverlay?.showLoading();
+        } else {
+          AppState.ghostOverlay?.hideLoading();
+        }
+      },
+      onError: (error) => {
+        console.error('[InterviewGhost] Error:', error);
+        AppState.ghostOverlay?.hideLoading();
+        AppState.ghostOverlay?.hide();
+      },
+    });
+    console.log('[InterviewGhost] Service initialized');
+  }
+};
+
+
+
 // Re-export types and classes from service files
 export { ContextCaptureService } from "./context-capture";
 export { GhostTextOverlay } from "./ghost-overlay";
+export { InterviewGhostService } from "./interview-ghost";
 export { KeyboardMonitor } from "./keyboard-monitor";
 export { KeystrokeListener } from "./keystroke-listener";
+export { getTranscribeService } from "./transcribe-service";
+export { getTranscribeIndicator } from "./transcribe-indicator";
+export { getVoiceAgentPanel } from "./voice-agent-panel";
 export { getCaretPosition, startCaretTracking } from "./caret-tracker";
 export type { CaretPosition } from "./caret-tracker";
 export type { TextOutputMode } from "./text-handler";
@@ -135,5 +171,6 @@ export {
   captureSelectedText,
   sendTextToLastWindow,
   pasteToLastWindow,
-  typeToLastWindow,
+  cancelTyping,
 } from "./text-handler";
+

@@ -10,11 +10,14 @@ import { ActionList } from "./action-list";
 import { ResultPanel } from "./result-panel";
 import { ChatPanel } from "./chat-panel";
 import { InterviewCopilotPanel } from "./interview-copilot-panel";
-import { PrepModePanel } from "./prep-mode-panel";
+import { TextAgentPanel } from "./text-agent-panel";
 import { VoiceAgentPanel } from "./voice-agent-panel";
+import { HomescreenLayout } from "./homescreen-layout";
 import { Kbd } from "@/components/ui/kbd";
-import { Search, Settings, Sun, Moon } from "lucide-react";
+import { Search, Settings, Sun, Moon, LayoutGrid, List, Eye, EyeOff } from "lucide-react";
 import { generateUUID } from "@/lib/utils/generate-uuid";
+
+const LAYOUT_MODE_KEY = "ai-keyboard-layout-mode";
 
 interface ActionMenuProps {
   selectedText: string;
@@ -34,8 +37,10 @@ export function ActionMenu({
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [showChatMode, setShowChatMode] = useState(false);
   const [showCopilotMode, setShowCopilotMode] = useState(false);
-  const [showPrepMode, setShowPrepMode] = useState(false);
+  const [showTextAgentMode, setShowTextAgentMode] = useState(false);
   const [showVoiceAgentMode, setShowVoiceAgentMode] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"command-palette" | "homescreen">("command-palette");
+  const [invisibilityEnabled, setInvisibilityEnabled] = useState(true);
   const [allActions, setAllActions] = useState<Action[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const { theme, setTheme } = useTheme();
@@ -62,11 +67,20 @@ export function ActionMenu({
 
   useEffect(() => {
     setAllActions(loadActions());
+    // Load layout mode from localStorage
+    const storedLayoutMode = localStorage.getItem(LAYOUT_MODE_KEY) as "command-palette" | "homescreen" | null;
+    if (storedLayoutMode) {
+      setLayoutMode(storedLayoutMode);
+    }
+    // Load invisibility state from electron
+    window.electron?.getContentProtectionEnabled?.().then((enabled: boolean) => {
+      setInvisibilityEnabled(enabled);
+    });
   }, []);
 
-  const filteredActions = allActions.filter((action) =>
-    action.label.toLowerCase().includes(filter.toLowerCase())
-  );
+  const filteredActions = allActions
+    .filter((action) => action.id !== "text-agent") // Text Agent only for grid view
+    .filter((action) => action.label.toLowerCase().includes(filter.toLowerCase()));
 
   const handleActionSelect = useCallback(
     async (action: Action) => {
@@ -80,8 +94,8 @@ export function ActionMenu({
         return;
       }
 
-      if (action.id === "prep-mode") {
-        setShowPrepMode(true);
+      if (action.id === "text-agent") {
+        setShowTextAgentMode(true);
         return;
       }
 
@@ -97,14 +111,14 @@ export function ActionMenu({
 
       setCurrentAction(action);
       setMessages([]);
-      
+
       const prompt = getActionPrompt(action);
       sendMessage(
-        { 
-          parts: [{ 
-            type: "text", 
+        {
+          parts: [{
+            type: "text",
             text: selectedText
-          }] 
+          }]
         },
         {
           body: { action: action.id as ActionType, customPrompt: prompt },
@@ -117,16 +131,16 @@ export function ActionMenu({
   const handleCustomSubmit = useCallback(async () => {
     const customAction = allActions.find((a) => a.id === "custom");
     if (!customAction) return;
-    
+
     setCurrentAction(customAction);
     setShowCustomInput(false);
     setMessages([]);
     sendMessage(
-      { 
-        parts: [{ 
-          type: "text", 
+      {
+        parts: [{
+          type: "text",
           text: selectedText
-        }] 
+        }]
       },
       {
         body: { action: "custom" as ActionType, customPrompt },
@@ -150,13 +164,32 @@ export function ActionMenu({
     setShowCustomInput(false);
     setShowChatMode(false);
     setShowCopilotMode(false);
-    setShowPrepMode(false);
+    setShowTextAgentMode(false);
     setShowVoiceAgentMode(false);
   }, [setMessages]);
 
+  const handleAgentSelect = useCallback((agentId: string) => {
+    const action = allActions.find(a => a.id === agentId);
+    if (action) {
+      handleActionSelect(action);
+    }
+  }, [allActions, handleActionSelect]);
+
+  const toggleLayout = useCallback(() => {
+    const newMode = layoutMode === "command-palette" ? "homescreen" : "command-palette";
+    setLayoutMode(newMode);
+    localStorage.setItem(LAYOUT_MODE_KEY, newMode);
+  }, [layoutMode]);
+
+  const toggleInvisibility = useCallback(() => {
+    const newValue = !invisibilityEnabled;
+    setInvisibilityEnabled(newValue);
+    window.electron?.setContentProtectionEnabled?.(newValue);
+  }, [invisibilityEnabled]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (showChatMode || showCopilotMode || showPrepMode || showVoiceAgentMode) return;
+      if (showChatMode || showCopilotMode || showTextAgentMode || showVoiceAgentMode) return;
 
       if (e.key === "Escape") {
         if (currentAction || showCustomInput) {
@@ -244,11 +277,13 @@ export function ActionMenu({
     );
   }
 
-  if (showPrepMode) {
+  if (showTextAgentMode) {
     return (
-      <PrepModePanel
+      <TextAgentPanel
+        selectedText={selectedText}
         onBack={handleBack}
         onClose={onClose}
+        onReplace={onReplace}
       />
     );
   }
@@ -258,6 +293,7 @@ export function ActionMenu({
       <InterviewCopilotPanel
         onBack={handleBack}
         onClose={onClose}
+        onReplace={onReplace}
       />
     );
   }
@@ -313,11 +349,17 @@ export function ActionMenu({
     );
   }
 
+  // Homescreen layout
+  if (layoutMode === "homescreen") {
+    return <HomescreenLayout onSelectAgent={handleAgentSelect} onToggleLayout={toggleLayout} />;
+  }
+
+  // Command palette layout (default)
   return (
     <div className="flex h-full flex-col">
-      <div className="px-2 pt-2 pb-1">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-white/[0.03] dark:bg-white/[0.03] border border-white/[0.06] dark:border-white/[0.06]">
-          <Search className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+      <div className="px-2.5 pt-2.5 pb-1.5">
+        <div className="flex items-center gap-3 rounded-xl px-3.5 py-3 bg-white/[0.03] dark:bg-white/[0.03] border border-white/[0.06] dark:border-white/[0.06] transition-colors duration-150 focus-within:border-white/[0.12]">
+          <Search className="h-4 w-4 text-muted-foreground/40 shrink-0" />
           <input
             ref={inputRef}
             value={filter}
@@ -329,8 +371,8 @@ export function ActionMenu({
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
           />
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[11px] text-muted-foreground/50">Quick AI</span>
-            <Kbd className="text-[10px] px-1.5 py-0.5 bg-white/[0.08] border-white/[0.1]">Tab</Kbd>
+            <span className="text-[10px] text-muted-foreground/40 tracking-wide">Quick AI</span>
+            <Kbd className="text-[10px] px-1.5 py-0.5 bg-white/[0.06] border-white/[0.08]">Tab</Kbd>
           </div>
         </div>
       </div>
@@ -344,24 +386,38 @@ export function ActionMenu({
         />
       </div>
 
-      <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+      <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-3 text-sm text-muted-foreground">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Kbd>esc</Kbd>
-            <span>close</span>
+            <span className="text-muted-foreground/70">close</span>
           </div>
           <button
             onClick={() => window.electron.openSettings()}
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 hover:text-foreground transition-colors duration-150"
           >
             <Settings className="h-3.5 w-3.5" />
             <span>settings</span>
           </button>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
+            className="flex items-center gap-1 hover:text-foreground transition-colors duration-150"
           >
             {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          </button>
+          <button
+            onClick={toggleLayout}
+            className="flex items-center gap-1 hover:text-foreground transition-colors duration-150"
+            title="Switch to grid layout"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={toggleInvisibility}
+            className="flex items-center gap-1 hover:text-foreground transition-colors duration-150"
+            title={invisibilityEnabled ? "Hidden from screen recorders (click to show)" : "Visible to screen recorders (click to hide)"}
+          >
+            {invisibilityEnabled ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </button>
         </div>
         <div className="flex items-center gap-4">
@@ -371,7 +427,7 @@ export function ActionMenu({
           </div>
           <div className="flex items-center gap-2">
             <Kbd>↵</Kbd>
-            <span>select</span>
+            <span className="text-muted-foreground/70">select</span>
           </div>
         </div>
       </div>

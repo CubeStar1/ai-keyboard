@@ -1,17 +1,30 @@
 import { globalShortcut, screen } from "electron";
-import { AppState } from "../app-state";
+import { AppState, VoiceMode } from "../app-state";
 import {
   captureLastActiveWindow,
   captureSelectedText,
   sendTextToLastWindow,
   initializeGhostText,
+  initializeInterviewGhost,
   createKeyboardMonitor,
-  startKeystrokeListening,
+  cancelTyping,
 } from "../services";
 import { createBrainPanelWindow, createSuggestionWindow } from "../windows";
+import { getTranscribeService } from "../services/transcribe-service";
+import { getTranscribeIndicator } from "../services/transcribe-indicator";
+import { toggleVoiceAgentPanel } from "../ipc/voice-agent-handlers";
+import { is } from "@electron-toolkit/utils";
+
+const VOICE_MODES: VoiceMode[] = ["transcribe", "command", "generate"];
+
+function cycleVoiceMode(): VoiceMode {
+  const currentIndex = VOICE_MODES.indexOf(AppState.currentVoiceMode);
+  const nextIndex = (currentIndex + 1) % VOICE_MODES.length;
+  AppState.currentVoiceMode = VOICE_MODES[nextIndex];
+  return AppState.currentVoiceMode;
+}
 
 export const registerGlobalShortcuts = (): void => {
-  // Main menu toggle: Ctrl+\
   globalShortcut.register("CommandOrControl+\\", async () => {
     if (!AppState.mainWindow) return;
 
@@ -31,10 +44,13 @@ export const registerGlobalShortcuts = (): void => {
     }
   });
 
-  // Suggestion trigger: Ctrl+Space
   globalShortcut.register("CommandOrControl+Space", async () => {
     try {
-      if (AppState.suggestionWindow && !AppState.suggestionWindow.isDestroyed() && AppState.suggestionWindow.isVisible()) {
+      if (
+        AppState.suggestionWindow &&
+        !AppState.suggestionWindow.isDestroyed() &&
+        AppState.suggestionWindow.isVisible()
+      ) {
         AppState.suggestionWindow.hide();
         return;
       }
@@ -72,7 +88,6 @@ export const registerGlobalShortcuts = (): void => {
     }
   });
 
-  // Brain panel toggle: Ctrl+Shift+B
   globalShortcut.register("CommandOrControl+Shift+B", () => {
     if (!AppState.brainPanelWindow || AppState.brainPanelWindow.isDestroyed()) {
       const window = createBrainPanelWindow();
@@ -84,7 +99,6 @@ export const registerGlobalShortcuts = (): void => {
     }
   });
 
-  // Ghost Text manual trigger: Ctrl+Alt+G
   globalShortcut.register("CommandOrControl+Alt+G", async () => {
     console.log("[GhostText] Manual trigger via Ctrl+Alt+G");
 
@@ -113,7 +127,6 @@ export const registerGlobalShortcuts = (): void => {
     }
   });
 
-  // Accept ghost text: Shift+Tab
   globalShortcut.register("Shift+Tab", async () => {
     if (!AppState.ghostTextEnabled || !AppState.ghostOverlay?.isShowing()) return;
 
@@ -136,10 +149,76 @@ export const registerGlobalShortcuts = (): void => {
     }, 100);
   });
 
-  // Dismiss ghost text: Shift+Escape
+  // Universal Panic Button (Stop Typing + Hide UI)
   globalShortcut.register("Shift+Escape", () => {
+    console.log("[PanicButton] Triggered via Shift+Escape");
+    cancelTyping(); // Always try to stop typing
+
     if (!AppState.ghostTextEnabled) return;
     AppState.ghostOverlay?.hide();
+  });
+
+
+
+  globalShortcut.register("CommandOrControl+Alt+I", async () => {
+    console.log("[InterviewGhost] Triggered via Ctrl+Alt+I");
+
+    if (!AppState.ghostOverlay) {
+      initializeGhostText();
+    }
+    if (!AppState.interviewGhostService) {
+      initializeInterviewGhost();
+    }
+
+    AppState.ghostTextEnabled = true;
+    AppState.ghostOverlay?.setEnabled(true);
+
+    await AppState.interviewGhostService?.triggerSuggestion();
+  });
+
+  // Tabby Voice Agent - Ctrl+Alt+J
+  globalShortcut.register("CommandOrControl+Alt+J", () => {
+    console.log("[VoiceAgent] Triggered via Ctrl+Alt+J");
+    toggleVoiceAgentPanel();
+  });
+
+  globalShortcut.register("CommandOrControl+Shift+T", () => {
+    console.log("[VoiceMode] Cycling mode...");
+    const newMode = cycleVoiceMode();
+    console.log("[VoiceMode] New mode:", newMode);
+
+    const indicator = getTranscribeIndicator();
+    indicator.setPort(is.dev ? 3000 : AppState.nextJSPort || 3000);
+    indicator.show("idle", newMode);
+
+    setTimeout(() => indicator.hide(), 1500);
+  });
+
+  globalShortcut.register("CommandOrControl+Alt+T", async () => {
+    console.log("[Transcribe] Triggered via Ctrl+Alt+T");
+
+    const service = getTranscribeService();
+    const indicator = getTranscribeIndicator();
+
+    indicator.setPort(is.dev ? 3000 : AppState.nextJSPort || 3000);
+
+    const isRecording = service.isActive();
+    const mode = AppState.currentVoiceMode;
+    console.log("[Transcribe] isRecording:", isRecording, "mode:", mode);
+
+    if (isRecording) {
+      console.log("[Transcribe] Stopping recording...");
+      indicator.updateState("processing");
+      AppState.mainWindow?.webContents.send("transcribe-stop");
+
+      setTimeout(() => indicator.hide(), 4000);
+    } else {
+      console.log("[Transcribe] Starting recording...");
+      await captureLastActiveWindow();
+      indicator.show("recording", mode);
+      service.startRecording();
+      AppState.mainWindow?.webContents.send("transcribe-start");
+    }
   });
 };
 

@@ -195,16 +195,16 @@ export function VoiceAgentPanel({ onBack, onClose }: VoiceAgentPanelProps) {
           disabled={isLoading}
           onClick={handleMicToggle}
           className={cn(
-            "rounded-full h-12 w-12 transition-colors duration-300",
+            "rounded-full h-12 w-12 transition-all duration-300",
             isLoading
-              ? "bg-muted animate-pulse"
+              ? "bg-muted/60 animate-pulse"
               : !isActive
-                ? "bg-green-500/20 text-green-500 hover:bg-green-500/30"
+                ? "bg-primary/15 text-primary hover:bg-primary/25 hover:scale-105"
                 : !isListening
-                  ? "bg-destructive/20 text-destructive hover:bg-destructive/30"
+                  ? "bg-muted/40 text-muted-foreground hover:bg-muted/60"
                   : isUserSpeaking
-                    ? "bg-primary/20 text-primary"
-                    : ""
+                    ? "bg-primary/25 text-primary ring-2 ring-primary/30"
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
           )}
         >
           {isLoading ? (
@@ -266,10 +266,10 @@ function ConversationView({ messages }: { messages: UIMessageWithCompleted[] }) 
           <div
             key={message.id}
             className={cn(
-              "flex px-3 py-2 rounded-lg",
+              "flex px-3 py-2.5 rounded-xl",
               message.role === "user"
-                ? "ml-auto max-w-[80%] bg-primary/10"
-                : "mr-auto max-w-[80%]"
+                ? "ml-auto max-w-[80%] bg-primary/8 border border-primary/10"
+                : "mr-auto max-w-[80%] bg-muted/30"
             )}
           >
             {!message.completed ? (
@@ -342,7 +342,7 @@ function ToolBadge({ part, compact = false }: { part: ToolUIPart; compact?: bool
   return (
     <div
       className={cn(
-        "flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/50 text-xs",
+        "flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 text-xs",
         compact ? "max-w-[140px]" : ""
       )}
     >

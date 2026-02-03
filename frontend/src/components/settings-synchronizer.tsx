@@ -8,6 +8,8 @@ const STORAGE_KEYS = {
   GHOST_TEXT_ENABLED: "ai-keyboard-ghost-text-enabled",
   GHOST_TEXT_AUTO_TRIGGER: "ai-keyboard-ghost-text-auto-trigger",
   GHOST_TEXT_AUTO_TRIGGER_DELAY: "ai-keyboard-ghost-text-auto-trigger-delay",
+  DEFAULT_MODEL: "ai-keyboard-default-model",
+  DEFAULT_FAST_MODEL: "ai-keyboard-default-fast-model",
 };
 
 /**
@@ -30,7 +32,7 @@ export function SettingsSynchronizer() {
     // Sync text output mode
     const storedTextOutputMode = localStorage.getItem(STORAGE_KEYS.TEXT_OUTPUT_MODE);
     if (storedTextOutputMode) {
-      window.electron.setTextOutputMode?.(storedTextOutputMode as "paste" | "typewriter");
+      window.electron.setTextOutputMode?.(storedTextOutputMode as "paste" | "typewriter" | "typewriter-leetcode");
     }
 
     // Sync ghost text enabled
@@ -51,6 +53,17 @@ export function SettingsSynchronizer() {
     if (storedAutoTriggerDelay) {
       const delay = parseInt(storedAutoTriggerDelay, 10);
       window.electron.setGhostTextAutoTriggerDelay?.(delay * 1000); // Convert to ms
+    }
+
+    // Sync model settings
+    const storedDefaultModel = localStorage.getItem(STORAGE_KEYS.DEFAULT_MODEL);
+    if (storedDefaultModel) {
+      window.electron.setDefaultModel?.(storedDefaultModel);
+    }
+
+    const storedFastModel = localStorage.getItem(STORAGE_KEYS.DEFAULT_FAST_MODEL);
+    if (storedFastModel) {
+      window.electron.setDefaultFastModel?.(storedFastModel);
     }
 
     console.log("[SettingsSynchronizer] Settings synced successfully");

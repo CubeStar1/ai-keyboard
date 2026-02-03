@@ -29,46 +29,46 @@ export function ResultPanel({
 }: ResultPanelProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon-sm" onClick={onBack}>
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon-sm" onClick={onBack} className="transition-colors duration-150">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary tracking-wide">
             {actionLabel}
           </span>
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={onClose}>
+        <Button variant="ghost" size="icon-sm" onClick={onClose} className="transition-colors duration-150">
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 px-4 pt-2 h-[calc(100%-6rem)]">
+      <ScrollArea className="flex-1 px-4 pt-3 h-[calc(100%-6rem)]">
         {isLoading && messages.length === 0 ? (
           <div className="flex items-center justify-center py-8">
-            <Spinner className="h-6 w-6" />
+            <Spinner className="h-5 w-5" />
           </div>
         ) : (
           <ChatMessages isLoading={isLoading} messages={messages} />
         )}
       </ScrollArea>
 
-      <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-2.5 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
           <Kbd>esc</Kbd>
-          <span>to close</span>
+          <span className="text-muted-foreground/70">to close</span>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={onCopy}
-            className="flex items-center gap-1 hover:text-foreground"
+            className="flex items-center gap-1.5 hover:text-foreground transition-colors duration-150"
           >
             <Copy className="h-3 w-3" />
             <span>copy</span>
           </button>
           <button
             onClick={onPaste}
-            className="flex items-center gap-1 hover:text-foreground"
+            className="flex items-center gap-1.5 hover:text-foreground transition-colors duration-150"
           >
             <Kbd>↵</Kbd>
             <span>to paste</span>

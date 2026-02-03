@@ -82,6 +82,7 @@ export interface InterviewAnalysis {
   code?: string
   walkthrough?: string
   testCases?: Array<{ input?: string; output?: string; reason?: string }>
+  mistakes?: Array<{ mistake: string; correction: string; pattern: string }>
   memories?: Array<{ memory?: string; createdAt?: string }>
 }
 

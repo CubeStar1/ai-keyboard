@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Check, Clock, Hand, Keyboard, Power, Sparkles, Type } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Check, Clock, Hand, Keyboard, Power, Sparkles, Type, Brain, Zap } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -10,7 +10,11 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { models, defaultModel as defaultModelId, defaultFastModel as defaultFastModelId } from "@/lib/ai/models";
 
 const STORAGE_KEYS = {
   SUGGESTION_MODE: "ai-keyboard-suggestion-mode",
@@ -18,25 +22,43 @@ const STORAGE_KEYS = {
   GHOST_TEXT_ENABLED: "ai-keyboard-ghost-text-enabled",
   GHOST_TEXT_AUTO_TRIGGER: "ai-keyboard-ghost-text-auto-trigger",
   GHOST_TEXT_AUTO_TRIGGER_DELAY: "ai-keyboard-ghost-text-auto-trigger-delay",
+  DEFAULT_MODEL: "ai-keyboard-default-model",
+  DEFAULT_FAST_MODEL: "ai-keyboard-default-fast-model",
 };
 
 export function GeneralTab() {
   const [suggestionMode, setSuggestionMode] = useState<"hotkey" | "auto">("hotkey");
-  const [textOutputMode, setTextOutputMode] = useState<"paste" | "typewriter">("paste");
+  const [textOutputMode, setTextOutputMode] = useState<"paste" | "typewriter" | "typewriter-leetcode">("paste");
   const [ghostTextEnabled, setGhostTextEnabled] = useState(false);
   const [ghostTextAutoTrigger, setGhostTextAutoTrigger] = useState(false);
   const [ghostTextAutoTriggerDelay, setGhostTextAutoTriggerDelay] = useState(3); // seconds
+  const [selectedDefaultModel, setSelectedDefaultModel] = useState(defaultModelId);
+  const [selectedFastModel, setSelectedFastModel] = useState(defaultFastModelId);
+
+  // Group models by provider for the dropdown
+  const groupedModels = useMemo(() => {
+    return models.reduce((acc, model) => {
+      const provider = model.provider || "Custom";
+      if (!acc[provider]) {
+        acc[provider] = [];
+      }
+      acc[provider].push(model);
+      return acc;
+    }, {} as Record<string, typeof models>);
+  }, []);
 
   useEffect(() => {
     const storedSuggestionMode = localStorage.getItem(STORAGE_KEYS.SUGGESTION_MODE) as "hotkey" | "auto" | null;
-    const storedTextOutputMode = localStorage.getItem(STORAGE_KEYS.TEXT_OUTPUT_MODE) as "paste" | "typewriter" | null;
+    const storedTextOutputMode = localStorage.getItem(STORAGE_KEYS.TEXT_OUTPUT_MODE) as "paste" | "typewriter" | "typewriter-leetcode" | null;
     const storedGhostText = localStorage.getItem(STORAGE_KEYS.GHOST_TEXT_ENABLED);
-    
+    const storedDefaultModel = localStorage.getItem(STORAGE_KEYS.DEFAULT_MODEL);
+    const storedFastModel = localStorage.getItem(STORAGE_KEYS.DEFAULT_FAST_MODEL);
+
     if (storedSuggestionMode) {
       setSuggestionMode(storedSuggestionMode);
       window.electron?.setSuggestionMode?.(storedSuggestionMode);
     }
-    
+
     if (storedTextOutputMode) {
       setTextOutputMode(storedTextOutputMode);
       window.electron?.setTextOutputMode?.(storedTextOutputMode);
@@ -51,17 +73,28 @@ export function GeneralTab() {
     // Load auto-trigger settings
     const storedAutoTrigger = localStorage.getItem(STORAGE_KEYS.GHOST_TEXT_AUTO_TRIGGER);
     const storedAutoTriggerDelay = localStorage.getItem(STORAGE_KEYS.GHOST_TEXT_AUTO_TRIGGER_DELAY);
-    
+
     if (storedAutoTrigger) {
       const enabled = storedAutoTrigger === "true";
       setGhostTextAutoTrigger(enabled);
       window.electron?.setGhostTextAutoTrigger?.(enabled);
     }
-    
+
     if (storedAutoTriggerDelay) {
-      const delay = parseInt(storedAutoTriggerDelay, 10);
+      const delay = parseFloat(storedAutoTriggerDelay);
       setGhostTextAutoTriggerDelay(delay);
       window.electron?.setGhostTextAutoTriggerDelay?.(delay * 1000); // Convert to ms
+    }
+
+    // Load model settings
+    if (storedDefaultModel) {
+      setSelectedDefaultModel(storedDefaultModel);
+      window.electron?.setDefaultModel?.(storedDefaultModel);
+    }
+
+    if (storedFastModel) {
+      setSelectedFastModel(storedFastModel);
+      window.electron?.setDefaultFastModel?.(storedFastModel);
     }
   }, []);
 
@@ -71,7 +104,7 @@ export function GeneralTab() {
     window.electron?.setSuggestionMode?.(mode);
   };
 
-  const handleTextOutputModeChange = (mode: "paste" | "typewriter") => {
+  const handleTextOutputModeChange = (mode: "paste" | "typewriter" | "typewriter-leetcode") => {
     setTextOutputMode(mode);
     localStorage.setItem(STORAGE_KEYS.TEXT_OUTPUT_MODE, mode);
     window.electron?.setTextOutputMode?.(mode);
@@ -96,201 +129,287 @@ export function GeneralTab() {
     window.electron?.setGhostTextAutoTriggerDelay?.(delay * 1000); // Convert to ms
   };
 
+  const handleDefaultModelChange = (model: string) => {
+    setSelectedDefaultModel(model);
+    localStorage.setItem(STORAGE_KEYS.DEFAULT_MODEL, model);
+    window.electron?.setDefaultModel?.(model);
+  };
+
+  const handleFastModelChange = (model: string) => {
+    setSelectedFastModel(model);
+    localStorage.setItem(STORAGE_KEYS.DEFAULT_FAST_MODEL, model);
+    window.electron?.setDefaultFastModel?.(model);
+  };
+
   return (
-    <div className="p-8 w-full max-w-none space-y-8">
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <div className="mt-1">
-              <Hand className="w-5 h-5 text-green-500" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-base">Accessibility Permissions</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Permissions granted. AI Keyboard can now access text in other applications.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
-            <Check className="w-4 h-4" />
-            Enabled
-          </div>
-        </div>
-      </section>
-
-      <div className="h-px bg-border" />
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <div className="mt-1">
-              <Keyboard className="w-5 h-5 text-blue-500" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-base">AI Keyboard Shortcut</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Press to open the AI action menu from anywhere.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 bg-muted px-3 py-1.5 rounded-md border text-sm font-medium">
-            <span className="text-muted-foreground">Ctrl</span>
-            <span>+</span>
-            <span>\</span>
-          </div>
-        </div>
-      </section>
-
-      <div className="h-px bg-border" />
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <div className="mt-1">
-              <Sparkles className="w-5 h-5 text-purple-500" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-base">AI Suggestions</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {suggestionMode === "hotkey" 
-                  ? <>Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Ctrl+Space</kbd> to get suggestions.</>
-                  : "Suggestions appear automatically when you copy text (Ctrl+C)."
-                }
-              </p>
-            </div>
-          </div>
-          <Select value={suggestionMode} onValueChange={(v) => handleModeChange(v as "hotkey" | "auto")}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hotkey">Hotkey only</SelectItem>
-              <SelectItem value="auto">Auto-suggest</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </section>
-
-      <div className="h-px bg-border" />
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <div className="mt-1">
-              <Type className="w-5 h-5 text-orange-500" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-base">Text Output Mode</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {textOutputMode === "paste" 
-                  ? "Text is pasted instantly from clipboard."
-                  : "Text is typed character by character for a cool effect."
-                }
-              </p>
-            </div>
-          </div>
-          <Select value={textOutputMode} onValueChange={(v) => handleTextOutputModeChange(v as "paste" | "typewriter")}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="paste">Instant paste</SelectItem>
-              <SelectItem value="typewriter">Typewriter</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </section>
-
-      <div className="h-px bg-border" />
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <div className="mt-1">
-              <Sparkles className="w-5 h-5 text-cyan-500" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-base">Ghost Text Autocomplete</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {ghostTextEnabled 
-                  ? "AI suggestions appear inline as you type in any application."
-                  : "Enable to see inline AI suggestions across all Windows apps."
-                }
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Ctrl+Alt+G</kbd> to trigger manually
-              </p>
-            </div>
-          </div>
-          <Switch 
-            checked={ghostTextEnabled} 
-            onCheckedChange={handleGhostTextChange}
-          />
-        </div>
-
-        {/* Auto-trigger options - only shown when ghost text is enabled */}
-        {ghostTextEnabled && (
-          <div className="ml-9 space-y-4 pt-2">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-3">
-                <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-sm">Auto-trigger suggestions</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Suggestions appear automatically when you pause typing
-                  </p>
-                </div>
+    <ScrollArea className="h-full w-full">
+      <div className="p-8 w-full max-w-none space-y-8">
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Hand className="w-5 h-5 text-green-500" />
               </div>
-              <Switch 
-                checked={ghostTextAutoTrigger} 
-                onCheckedChange={handleAutoTriggerChange}
-              />
+              <div>
+                <h3 className="font-semibold text-base">Accessibility Permissions</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Permissions granted. AI Keyboard can now access text in other applications.
+                </p>
+              </div>
             </div>
+            <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+              <Check className="w-4 h-4" />
+              Enabled
+            </div>
+          </div>
+        </section>
 
-            {ghostTextAutoTrigger && (
-              <div className="flex items-center gap-4 ml-7">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Auto Trigger Delay</span>
-                    <span className="text-xs font-medium">{ghostTextAutoTriggerDelay}s</span>
-                  </div>
-                  <Slider
-                    value={[ghostTextAutoTriggerDelay]}
-                    onValueChange={handleAutoTriggerDelayChange}
-                    min={0.5}
-                    max={10}
-                    step={0.1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between mt-1">
-                    <span className="text-[10px] text-muted-foreground">Fast (0.5s)</span>
-                    <span className="text-[10px] text-muted-foreground">Slow (10s)</span>
+        <div className="h-px bg-border" />
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Keyboard className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">AI Keyboard Shortcut</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Press to open the AI action menu from anywhere.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 bg-muted px-3 py-1.5 rounded-md border text-sm font-medium">
+              <span className="text-muted-foreground">Ctrl</span>
+              <span>+</span>
+              <span>\</span>
+            </div>
+          </div>
+        </section>
+
+        <div className="h-px bg-border" />
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">AI Suggestions</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {suggestionMode === "hotkey"
+                    ? <>Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Ctrl+Space</kbd> to get suggestions.</>
+                    : "Suggestions appear automatically when you copy text (Ctrl+C)."
+                  }
+                </p>
+              </div>
+            </div>
+            <Select value={suggestionMode} onValueChange={(v) => handleModeChange(v as "hotkey" | "auto")}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hotkey">Hotkey only</SelectItem>
+                <SelectItem value="auto">Auto-suggest</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+
+        <div className="h-px bg-border" />
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Type className="w-5 h-5 text-orange-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">Text Output Mode</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {textOutputMode === "paste"
+                    ? "Text is pasted instantly from clipboard."
+                    : "Text is typed character by character for a cool effect."
+                  }
+                </p>
+              </div>
+            </div>
+            <Select value={textOutputMode} onValueChange={(v) => handleTextOutputModeChange(v as "paste" | "typewriter" | "typewriter-leetcode")}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="paste">Instant paste</SelectItem>
+                <SelectItem value="typewriter">Typewriter</SelectItem>
+                <SelectItem value="typewriter-leetcode">Typewriter - LeetCode</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+
+        <div className="h-px bg-border" />
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Sparkles className="w-5 h-5 text-cyan-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">Ghost Text Autocomplete</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {ghostTextEnabled
+                    ? "AI suggestions appear inline as you type in any application."
+                    : "Enable to see inline AI suggestions across all Windows apps."
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Ctrl+Alt+G</kbd> to trigger manually
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={ghostTextEnabled}
+              onCheckedChange={handleGhostTextChange}
+            />
+          </div>
+
+          {/* Auto-trigger options - only shown when ghost text is enabled */}
+          {ghostTextEnabled && (
+            <div className="ml-9 space-y-4 pt-2">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-3">
+                  <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-sm">Auto-trigger suggestions</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Suggestions appear automatically when you pause typing
+                    </p>
                   </div>
                 </div>
+                <Switch
+                  checked={ghostTextAutoTrigger}
+                  onCheckedChange={handleAutoTriggerChange}
+                />
               </div>
-            )}
-          </div>
-        )}
-      </section>
 
-      <div className="h-px bg-border" />
+              {ghostTextAutoTrigger && (
+                <div className="flex items-center gap-4 ml-7">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-muted-foreground">Auto Trigger Delay</span>
+                      <span className="text-xs font-medium">{ghostTextAutoTriggerDelay}s</span>
+                    </div>
+                    <Slider
+                      value={[ghostTextAutoTriggerDelay]}
+                      onValueChange={handleAutoTriggerDelayChange}
+                      min={0.5}
+                      max={10}
+                      step={0.1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-muted-foreground">Fast (0.5s)</span>
+                      <span className="text-[10px] text-muted-foreground">Slow (10s)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <div className="mt-1">
-              <Power className="w-5 h-5 text-blue-500" />
+        <div className="h-px bg-border" />
+
+        {/* Model Selection Section */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Brain className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">Default Model</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  The main AI model used for code generation and suggestions.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-base">Launch at login</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                When enabled, AI Keyboard will start automatically when you log in.
-              </p>
-            </div>
+            <Select value={selectedDefaultModel} onValueChange={handleDefaultModelChange}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(groupedModels).map(([provider, providerModels]) => (
+                  <SelectGroup key={provider}>
+                    <SelectLabel>{provider}</SelectLabel>
+                    {providerModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Switch defaultChecked />
-        </div>
-      </section>
-    </div>
+        </section>
+
+        <div className="h-px bg-border" />
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Zap className="w-5 h-5 text-yellow-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">Fast Model</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  A faster model used for quick completions and Interview Copilot.
+                </p>
+              </div>
+            </div>
+            <Select value={selectedFastModel} onValueChange={handleFastModelChange}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(groupedModels).map(([provider, providerModels]) => (
+                  <SelectGroup key={provider}>
+                    <SelectLabel>{provider}</SelectLabel>
+                    {providerModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+
+        <div className="h-px bg-border" />
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Power className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">Launch at login</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  When enabled, AI Keyboard will start automatically when you log in.
+                </p>
+              </div>
+            </div>
+            <Switch defaultChecked />
+          </div>
+        </section>
+      </div>
+    </ScrollArea>
   );
 }

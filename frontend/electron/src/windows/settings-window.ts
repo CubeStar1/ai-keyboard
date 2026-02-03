@@ -23,6 +23,9 @@ export const createSettingsWindow = (): BrowserWindow => {
     },
   });
 
+  // Make window invisible to screen recorders/sharing (uses WDA_EXCLUDEFROMCAPTURE on Windows)
+  AppState.settingsWindow.setContentProtection(true);
+
   if (is.dev) {
     AppState.settingsWindow.loadURL("http://localhost:3000/settings");
   } else {

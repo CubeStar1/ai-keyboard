@@ -19,7 +19,7 @@ export class GhostTextOverlay {
   private isEnabled = false;
   private nextJSPort: number | null = null;
   private ipcSetup = false;
-  
+
   constructor(port?: number) {
     this.nextJSPort = port || null;
   }
@@ -31,10 +31,10 @@ export class GhostTextOverlay {
   create(): void {
     // Create overlay for each display (for multi-monitor support)
     const displays = screen.getAllDisplays();
-    
+
     for (const display of displays) {
       const { x, y, width, height } = display.bounds;
-      
+
       const window = new BrowserWindow({
         x, y, width, height,
         transparent: true,
@@ -54,33 +54,36 @@ export class GhostTextOverlay {
         },
       });
 
+      // Make window invisible to screen recorders/sharing (uses WDA_EXCLUDEFROMCAPTURE on Windows)
+      window.setContentProtection(true);
+
       // Critical: Make entire window click-through
       window.setIgnoreMouseEvents(true, { forward: true });
-      
+
       // Stay on top even over fullscreen apps
       window.setAlwaysOnTop(true, 'screen-saver', 1);
-      
+
       // Visible on all workspaces/virtual desktops
       window.setVisibleOnAllWorkspaces(true);
-      
+
       // Load the ghost overlay page
       const port = this.nextJSPort || 3000;
       window.loadURL(`http://localhost:${port}/ghost-overlay`);
       console.log(`[GhostOverlay] Loading from http://localhost:${port}/ghost-overlay`);
-      
+
       this.windows.push(window);
     }
 
     // Setup IPC handlers
     this.setupIPC();
-    
+
     console.log('[GhostOverlay] Created overlay windows for', displays.length, 'displays');
   }
 
   private setupIPC(): void {
     if (this.ipcSetup) return;
     this.ipcSetup = true;
-    
+
     ipcMain.handle('get-ghost-state', () => ({
       suggestion: this.currentSuggestion,
       position: this.caretPosition,
@@ -94,28 +97,61 @@ export class GhostTextOverlay {
     ipcMain.removeHandler('get-ghost-state');
   }
 
+  async showLoading(): Promise<void> {
+    // Get current caret position for loading indicator
+    this.caretPosition = await getCaretPosition();
+
+    if (!this.caretPosition.isValid) {
+      console.log('[GhostOverlay] No valid caret position for loading');
+      return;
+    }
+
+    // Show all overlay windows
+    for (const window of this.windows) {
+      if (!window.isDestroyed()) {
+        window.showInactive();
+      }
+    }
+
+    // Broadcast loading state
+    this.broadcast('ghost-loading', {
+      visible: true,
+      x: this.caretPosition.x,
+      y: this.caretPosition.y,
+    });
+
+    console.log('[GhostOverlay] Showing loading at', this.caretPosition.x, this.caretPosition.y);
+  }
+
+  hideLoading(): void {
+    this.broadcast('ghost-loading', { visible: false, x: 0, y: 0 });
+  }
+
   async showSuggestion(suggestion: string): Promise<void> {
+    // Hide loading indicator
+    this.hideLoading();
+
     if (!this.isEnabled) return;
-    
+
     this.currentSuggestion = suggestion;
-    
+
     // Get current caret position
     this.caretPosition = await getCaretPosition();
-    
+
     if (!this.caretPosition.isValid) {
       console.log('[GhostOverlay] No valid caret position, not showing');
       return;
     }
 
     this.isVisible = true;
-    
+
     // Show all overlay windows
     for (const window of this.windows) {
       if (!window.isDestroyed()) {
         window.showInactive(); // Show without stealing focus
       }
     }
-    
+
     // Broadcast to all renderer windows
     this.broadcast('ghost-update', {
       suggestion,
@@ -123,16 +159,16 @@ export class GhostTextOverlay {
       y: this.caretPosition.y,
       visible: true,
     });
-    
+
     // Start tracking caret position while suggestion is visible
     this.startPositionTracking();
-    
+
     console.log('[GhostOverlay] Showing suggestion at', this.caretPosition.x, this.caretPosition.y);
   }
 
   private startPositionTracking(): void {
     if (this.caretTrackingCleanup) return; // Already tracking
-    
+
     this.caretTrackingCleanup = startCaretTracking((pos) => {
       if (this.isVisible && pos.isValid) {
         this.caretPosition = pos;
@@ -163,14 +199,14 @@ export class GhostTextOverlay {
     this.isVisible = false;
     this.currentSuggestion = '';
     this.stopPositionTracking();
-    
+
     // Hide all overlay windows
     for (const window of this.windows) {
       if (!window.isDestroyed()) {
         window.hide();
       }
     }
-    
+
     this.broadcast('ghost-update', { visible: false, suggestion: '', x: 0, y: 0 });
     console.log('[GhostOverlay] Hidden');
   }
@@ -199,6 +235,14 @@ export class GhostTextOverlay {
     for (const window of this.windows) {
       if (!window.isDestroyed()) {
         window.webContents.send(channel, data);
+      }
+    }
+  }
+
+  setContentProtection(enabled: boolean): void {
+    for (const window of this.windows) {
+      if (!window.isDestroyed()) {
+        window.setContentProtection(enabled);
       }
     }
   }

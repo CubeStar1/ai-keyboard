@@ -17,15 +17,23 @@ export interface AutoTriggerConfig {
 export class KeyboardMonitor {
   private buffer = '';
   private debounceTimer: NodeJS.Timeout | null = null;
-  private autoTriggerTimer: NodeJS.Timeout | null = null;
+  private displayTimer: NodeJS.Timeout | null = null;
   private abortController = new AbortController();
   private cache = new LRUCache<string, string>({ max: 25 });
   private config: KeyboardMonitorConfig;
   private currentSuggestion = '';
   private autoTriggerConfig: AutoTriggerConfig = {
     enabled: false,
-    delayMs: 3000, // Default 3 seconds like Kilo Code
+    delayMs: 3000,
   };
+  
+  // Speculative prefetch state
+  private pendingSuggestion = '';
+  private pendingContext = '';
+  private fetchVersion = 0;
+  private lastFetchTime = 0;
+  private prefetchTimer: NodeJS.Timeout | null = null;
+  private static readonly MIN_FETCH_INTERVAL = 150; // ms between fetches
   
   constructor(config: KeyboardMonitorConfig) {
     this.config = config;
@@ -35,9 +43,9 @@ export class KeyboardMonitor {
     this.autoTriggerConfig = { ...this.autoTriggerConfig, ...config };
     console.log('[KeyboardMonitor] Auto-trigger config updated:', this.autoTriggerConfig);
     
-    // If disabled, clear any pending auto-trigger
     if (!this.autoTriggerConfig.enabled) {
-      this.clearAutoTriggerTimer();
+      this.clearDisplayTimer();
+      this.clearPrefetchTimer();
     }
   }
 
@@ -53,49 +61,130 @@ export class KeyboardMonitor {
     }
 
     if (isBackspace) {
-      // Remove last character
       this.buffer = this.buffer.slice(0, -1);
     } else {
-      // Append character
       this.buffer += char;
     }
     
     this.config.onBufferUpdate?.(this.buffer);
     
-    // Reset auto-trigger timer on each keystroke
-    if (this.autoTriggerConfig.enabled) {
-      this.resetAutoTriggerTimer();
+    // Speculative prefetch: fetch eagerly, display lazily
+    if (this.autoTriggerConfig.enabled && this.buffer.length >= this.config.minContextLength) {
+      // Schedule prefetch (with rate limiting)
+      this.schedulePrefetch();
+      // Reset display timer
+      this.resetDisplayTimer();
     }
   }
 
-  private resetAutoTriggerTimer(): void {
-    this.clearAutoTriggerTimer();
+  private schedulePrefetch(): void {
+    this.clearPrefetchTimer();
     
-    if (this.buffer.length >= this.config.minContextLength) {
-      this.autoTriggerTimer = setTimeout(() => {
-        console.log('[KeyboardMonitor] Auto-trigger firing after', this.autoTriggerConfig.delayMs, 'ms pause');
-        this.fetchSuggestion();
-      }, this.autoTriggerConfig.delayMs);
+    const now = Date.now();
+    const timeSinceLastFetch = now - this.lastFetchTime;
+    
+    if (timeSinceLastFetch >= KeyboardMonitor.MIN_FETCH_INTERVAL) {
+      // Fetch immediately
+      this.prefetchSuggestion();
+    } else {
+      // Schedule to respect minimum interval
+      const delay = KeyboardMonitor.MIN_FETCH_INTERVAL - timeSinceLastFetch;
+      this.prefetchTimer = setTimeout(() => this.prefetchSuggestion(), delay);
     }
   }
 
-  private clearAutoTriggerTimer(): void {
-    if (this.autoTriggerTimer) {
-      clearTimeout(this.autoTriggerTimer);
-      this.autoTriggerTimer = null;
+  private clearPrefetchTimer(): void {
+    if (this.prefetchTimer) {
+      clearTimeout(this.prefetchTimer);
+      this.prefetchTimer = null;
     }
   }
-  
+
+  private async prefetchSuggestion(): Promise<void> {
+    const context = this.buffer;
+    
+    if (context.length < this.config.minContextLength) {
+      return;
+    }
+    
+    // Check cache first
+    const cached = this.cache.get(context);
+    if (cached) {
+      console.log('[KeyboardMonitor] Cache hit for prefetch:', context.slice(-30));
+      this.pendingSuggestion = cached;
+      this.pendingContext = context;
+      return;
+    }
+
+    // Abort previous request and create new controller
+    this.abortController.abort();
+    this.abortController = new AbortController();
+    const version = ++this.fetchVersion;
+    this.lastFetchTime = Date.now();
+    
+    try {
+      console.log('[KeyboardMonitor] Prefetching for:', context.slice(-40));
+      
+      const suggestion = await this.config.getSuggestion(
+        context,
+        this.abortController.signal
+      );
+      
+      // Only cache if this is still the current fetch version
+      if (this.fetchVersion === version && suggestion && suggestion.length > 0) {
+        this.cache.set(context, suggestion);
+        this.pendingSuggestion = suggestion;
+        this.pendingContext = context;
+        console.log('[KeyboardMonitor] Prefetch ready:', suggestion.slice(0, 30));
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('[KeyboardMonitor] Prefetch error:', error);
+      }
+    }
+  }
+
+  private resetDisplayTimer(): void {
+    this.clearDisplayTimer();
+    
+    this.displayTimer = setTimeout(() => {
+      // Show pending suggestion if we have one and context still matches
+      if (this.pendingSuggestion && this.buffer === this.pendingContext) {
+        console.log('[KeyboardMonitor] Display timer fired, showing cached suggestion');
+        this.currentSuggestion = this.pendingSuggestion;
+        this.config.onSuggestionReady(this.pendingSuggestion, this.pendingContext);
+      } else if (this.pendingSuggestion && this.buffer !== this.pendingContext) {
+        // Context changed, try to use cache or wait for prefetch
+        const cached = this.cache.get(this.buffer);
+        if (cached) {
+          this.currentSuggestion = cached;
+          this.config.onSuggestionReady(cached, this.buffer);
+        } else {
+          console.log('[KeyboardMonitor] No matching suggestion ready, fetching now');
+          this.fetchSuggestion();
+        }
+      } else {
+        // No pending suggestion, fetch now
+        this.fetchSuggestion();
+      }
+    }, this.autoTriggerConfig.delayMs);
+  }
+
+  private clearDisplayTimer(): void {
+    if (this.displayTimer) {
+      clearTimeout(this.displayTimer);
+      this.displayTimer = null;
+    }
+  }
 
   setContext(context: string, immediate: boolean = false): void {
     this.buffer = context;
     this.config.onBufferUpdate?.(this.buffer);
     
-    // Clear previous timer and abort pending requests
     this.clearTimerAndAbort();
-    this.clearAutoTriggerTimer();
+    this.clearDisplayTimer();
+    this.clearPrefetchTimer();
     
-    // Start new debounce timer or fetch immediately
     if (this.buffer.length >= this.config.minContextLength) {
       if (immediate) {
         this.fetchSuggestion();
@@ -130,7 +219,6 @@ export class KeyboardMonitor {
       return;
     }
 
-    // Create new abort controller for this request
     this.abortController = new AbortController();
     
     try {
@@ -141,7 +229,6 @@ export class KeyboardMonitor {
         this.abortController.signal
       );
       
-      // Validate context hasn't changed during fetch
       if (this.buffer !== context) {
         console.log('[KeyboardMonitor] Context changed during fetch, discarding');
         return;
@@ -172,9 +259,11 @@ export class KeyboardMonitor {
   clearBuffer(): void {
     this.buffer = '';
     this.currentSuggestion = '';
-    this.clearAutoTriggerTimer();
+    this.pendingSuggestion = '';
+    this.pendingContext = '';
+    this.clearDisplayTimer();
+    this.clearPrefetchTimer();
     this.config.onBufferUpdate?.('');
-    // Note: Don't call onClear() here - main.ts handles overlay hiding separately
   }
 
   getCurrentSuggestion(): string {
@@ -189,3 +278,4 @@ export class KeyboardMonitor {
     return this.cache.size;
   }
 }
+

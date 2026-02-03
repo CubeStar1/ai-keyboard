@@ -41,8 +41,8 @@ export const ActionList = memo(function ActionList({
     <div className="flex flex-col">
       {agents.length > 0 && (
         <>
-          <div className="px-4 py-2">
-            <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+          <div className="px-4 pt-3 pb-1.5">
+            <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">
               AI Agents
             </span>
           </div>
@@ -61,8 +61,8 @@ export const ActionList = memo(function ActionList({
 
       {actionsGroup.length > 0 && (
         <>
-          <div className="px-4 py-2">
-            <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+          <div className="px-4 pt-3 pb-1.5">
+            <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">
               AI Actions
             </span>
           </div>
@@ -106,19 +106,21 @@ function ActionItem({ action, isSelected, onClick }: ActionItemProps) {
       onClick={onClick}
       tabIndex={-1}
       className={cn(
-        "flex items-center justify-between gap-3 px-3 py-2 text-left transition-colors rounded-md",
-        "hover:bg-white/[0.05] dark:hover:bg-white/[0.05]",
-        isSelected && "bg-white/[0.08] dark:bg-white/[0.08]"
+        "flex items-center justify-between gap-3 px-3.5 py-2.5 text-left rounded-lg",
+        "transition-all duration-200 ease-out",
+        "hover:bg-white/[0.06] dark:hover:bg-white/[0.06]",
+        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20",
+        isSelected && "bg-white/[0.08] dark:bg-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
       )}
     >
       <div className="flex items-center gap-3">
-        <span className="text-base w-5 text-center">{action.icon}</span>
-        <span className="text-[13px] font-medium text-foreground">{action.label}</span>
+        <span className="text-base w-5 h-5 flex items-center justify-center shrink-0">{action.icon}</span>
+        <span className="text-[13px] font-medium text-foreground/90 group-hover:text-foreground transition-colors duration-200">{action.label}</span>
       </div>
       {action.shortcut && (
-        <div className="flex items-center gap-0.5 text-muted-foreground/40">
-          <span className="text-[11px]">Alt</span>
-          <span className="text-[11px] ml-1 font-medium">{action.shortcut}</span>
+        <div className="flex items-center gap-1 text-muted-foreground/40">
+          <span className="text-[10px] font-medium tracking-wide uppercase">Alt</span>
+          <span className="text-[11px] font-semibold">{action.shortcut}</span>
         </div>
       )}
     </button>

@@ -9,6 +9,8 @@ export const models: Model[] = [
   { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', provider: 'OpenAI' },
   { id: 'gpt-5-mini', label: 'GPT-5 Mini', provider: 'OpenAI' },
   { id: 'gpt-5-nano', label: 'GPT-5 Nano', provider: 'OpenAI' },
+  { id: 'gpt-4o-mini', label: 'GPT-4o Mini', provider: 'OpenAI' },
+  { id: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', provider: 'OpenAI' },
   {
     id: 'gemini-2.5-flash',
     label: 'Gemini 2.5 Flash',
@@ -40,17 +42,22 @@ export const models: Model[] = [
     provider: 'Cerebras',
   },
   {
+    id: 'qwen-3-32b',
+    label: 'Qwen 3 32B',
+    provider: 'Cerebras',
+  },
+  {
     id: 'openai/gpt-oss-20b-lmstudio',
     label: 'GPT OSS 20B (LMStudio)',
     provider: 'LMStudio',
   },
   {
-    id: 'qwen/qwen3-4b-thinking-2507-lmstudio',
-    label: 'Qwen3 4B Thinking (LMStudio)',
+    id: 'qwen/qwen3-4b',
+    label: 'Qwen3 4B',
     provider: 'LMStudio',
   },
 ]
 
 export const defaultModel = 'gpt-4.1-mini'
-export const defaultFastModel = 'moonshotai/kimi-k2-instruct'
+export const defaultFastModel = 'gpt-4.1-mini'
 

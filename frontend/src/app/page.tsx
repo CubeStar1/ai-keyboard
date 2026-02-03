@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { ActionMenu } from "@/components/action-menu";
+import { useTranscribeRecorder } from "@/hooks/useTranscribeRecorder";
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+  
+  // Initialize transcribe recorder (listens for IPC events for audio recording)
+  useTranscribeRecorder();
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.electron) {
-      const storedTextOutputMode = localStorage.getItem("ai-keyboard-text-output-mode") as "paste" | "typewriter" | null;
+      const storedTextOutputMode = localStorage.getItem("ai-keyboard-text-output-mode") as "paste" | "typewriter" | "typewriter-leetcode" | null;
       const storedSuggestionMode = localStorage.getItem("ai-keyboard-suggestion-mode") as "hotkey" | "auto" | null;
-      
+
       if (storedTextOutputMode) {
         window.electron.setTextOutputMode?.(storedTextOutputMode);
       }
@@ -69,7 +73,7 @@ export default function Home() {
   if (!isOpen) {
     return (
       <main className="flex flex-col h-screen rounded-2xl border border-white/20 dark:border-white/10 bg-background/80 backdrop-blur-2xl shadow-2xl">
-        <div 
+        <div
           className="h-3 w-full cursor-move shrink-0 flex items-center justify-center"
           style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         >
@@ -87,7 +91,7 @@ export default function Home() {
 
   return (
     <main className="h-screen overflow-hidden rounded-2xl border border-white/20 dark:border-white/10 bg-background/80 backdrop-blur-2xl shadow-2xl flex flex-col">
-      <div 
+      <div
         className="h-3 w-full cursor-move shrink-0 flex items-center justify-center"
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       >

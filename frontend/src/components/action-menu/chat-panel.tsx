@@ -225,14 +225,14 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 transition-colors duration-150">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <MessageSquare className="h-4 w-4 text-primary" />
-            <span className="font-medium text-sm">Chat Mode</span>
+            <span className="font-semibold text-sm tracking-tight">Chat Mode</span>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -241,14 +241,14 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
               variant="ghost"
               size="icon"
               onClick={stopPlayback}
-              className="h-8 w-8 text-primary"
+              className="h-8 w-8 text-primary transition-colors duration-150"
             >
               <VolumeX className="h-4 w-4" />
             </Button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8 transition-colors duration-150">
                 <History className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -263,7 +263,7 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ml-2"
                     onClick={(e) => handleDeleteChat(e, conv.id)}
                   >
                     <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
@@ -271,14 +271,14 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
                 </DropdownMenuItem>
               ))}
               {conversations.length === 0 && (
-                <div className="p-2 text-sm text-muted-foreground">No history</div>
+                <div className="p-2 text-sm text-muted-foreground/60">No history</div>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="icon" onClick={handleNewChat} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={handleNewChat} className="h-8 w-8 transition-colors duration-150">
             <Plus className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 transition-colors duration-150">
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -300,10 +300,10 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
         <ConversationScrollButton />
       </Conversation>
 
-      <div className="border-t p-3">
+      <div className="border-t border-white/[0.06] p-3">
         <PromptInput
           onSubmit={handlePromptSubmit}
-          className="border-border w-full"
+          className="border-white/[0.08] w-full"
         >
           <PromptInputBody>
             <PromptInputTextarea
@@ -338,22 +338,22 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
         </PromptInput>
       </div>
 
-      <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-2.5 text-xs text-muted-foreground">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Kbd>esc</Kbd>
-            <span>back</span>
+            <span className="text-muted-foreground/70">back</span>
           </div>
           <VoiceModeToggle mode={voiceMode} onModeChange={setVoiceMode} />
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Kbd>ctrl+t</Kbd>
-            <span>mic</span>
+            <span className="text-muted-foreground/70">mic</span>
           </div>
           <div className="flex items-center gap-2">
             <Kbd>↵</Kbd>
-            <span>send</span>
+            <span className="text-muted-foreground/70">send</span>
           </div>
         </div>
       </div>

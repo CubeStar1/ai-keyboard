@@ -2,9 +2,12 @@ import { BrowserWindow, Tray } from "electron";
 import Store from "electron-store";
 import type { ContextCaptureService } from "./services/context-capture";
 import type { GhostTextOverlay } from "./services/ghost-overlay";
+import type { InterviewGhostService } from "./services/interview-ghost";
 import type { KeyboardMonitor } from "./services/keyboard-monitor";
 import type { KeystrokeListener } from "./services/keystroke-listener";
 import type { TextOutputMode } from "./services/text-handler";
+
+export type VoiceMode = "transcribe" | "command" | "generate";
 
 const store = new Store();
 
@@ -18,6 +21,7 @@ export interface AppStateType {
 
   contextCaptureService: ContextCaptureService | null;
   ghostOverlay: GhostTextOverlay | null;
+  interviewGhostService: InterviewGhostService | null;
   keyboardMonitor: KeyboardMonitor | null;
   keystrokeListener: KeystrokeListener | null;
 
@@ -26,12 +30,18 @@ export interface AppStateType {
   ghostTextEnabled: boolean;
   ghostTextAutoTrigger: boolean;
   ghostTextAutoTriggerDelay: number;
+  contentProtectionEnabled: boolean;
+
+  defaultModel: string;
+  defaultFastModel: string;
 
   clipboardWatcher: NodeJS.Timeout | null;
   lastClipboardContent: string;
   isInternalClipboardOp: boolean;
 
   currentUserId: string | null;
+  cachedMemories: string[];
+  currentVoiceMode: VoiceMode;
 }
 
 export const AppState: AppStateType = {
@@ -44,6 +54,7 @@ export const AppState: AppStateType = {
 
   contextCaptureService: null,
   ghostOverlay: null,
+  interviewGhostService: null,
   keyboardMonitor: null,
   keystrokeListener: null,
 
@@ -52,12 +63,18 @@ export const AppState: AppStateType = {
   ghostTextEnabled: false,
   ghostTextAutoTrigger: false,
   ghostTextAutoTriggerDelay: 3000,
+  contentProtectionEnabled: true,
+
+  defaultModel: (store.get("defaultModel") as string) || "gpt-4.1-mini",
+  defaultFastModel: (store.get("defaultFastModel") as string) || "gpt-4.1-mini",
 
   clipboardWatcher: null,
   lastClipboardContent: "",
   isInternalClipboardOp: false,
 
   currentUserId: store.get("userId") as string | null,
+  cachedMemories: (store.get("cachedMemories") as string[]) || [],
+  currentVoiceMode: "transcribe",
 };
 
 export const getStore = () => store;

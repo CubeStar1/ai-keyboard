@@ -3,108 +3,108 @@ import { Action } from "@/lib/ai/types";
 const STORAGE_KEY = "ai-keyboard-actions";
 
 export const DEFAULT_ACTIONS: Action[] = [
-  { 
-    id: "chat", 
-    label: "Chat Mode", 
-    icon: "💬", 
+  {
+    id: "chat",
+    label: "Chat Mode",
+    icon: "💬",
     shortcut: "H",
     isDefault: true,
     group: "agent"
   },
-  { 
-    id: "interview-copilot", 
-    label: "Interview Copilot", 
-    icon: "🎯", 
+  {
+    id: "interview-copilot",
+    label: "Interview Copilot",
+    icon: "🎯",
     shortcut: "I",
     isDefault: true,
     description: "AI-powered coding interview assistant",
     group: "agent"
   },
-  { 
-    id: "prep-mode", 
-    label: "Prep Mode", 
-    icon: "📚", 
-    shortcut: "P",
+  {
+    id: "text-agent",
+    label: "Text Agent",
+    icon: "✏️",
+    shortcut: "T",
     isDefault: true,
-    description: "LeetCode practice with hints and pattern recognition",
+    description: "Quick text transformations and AI tools",
     group: "agent"
   },
-  { 
-    id: "voice-agent", 
-    label: "Voice Agent", 
-    icon: "🎙️", 
+  {
+    id: "voice-agent",
+    label: "Voice Agent",
+    icon: "🎙️",
     shortcut: "V",
     isDefault: true,
     description: "Real-time voice conversation with AI",
     group: "agent"
   },
-  { 
-    id: "fix-grammar", 
-    label: "Fix Grammar", 
-    icon: "✍️", 
+  {
+    id: "fix-grammar",
+    label: "Fix Grammar",
+    icon: "✍️",
     shortcut: "F",
     isDefault: true,
     prompt: "You are a grammar and spelling expert. Fix all grammar, spelling, and punctuation errors in the text. Maintain the original tone and style. Return ONLY the corrected text, no explanations.",
     group: "action"
   },
-  { 
-    id: "shorten", 
-    label: "Shorten Text", 
-    icon: "✂️", 
+  {
+    id: "shorten",
+    label: "Shorten Text",
+    icon: "✂️",
     shortcut: "S",
     isDefault: true,
     prompt: "You are a concise writing expert. Condense the text while preserving all key information. Remove redundancy and filler words. Return ONLY the shortened text, no explanations.",
     group: "action"
   },
-  { 
-    id: "expand", 
-    label: "Make Longer", 
-    icon: "📝", 
+  {
+    id: "expand",
+    label: "Make Longer",
+    icon: "📝",
     shortcut: "E",
     isDefault: true,
     prompt: "You are a content writer. Expand the text with relevant details, examples, and context. Maintain the original tone and message. Return ONLY the expanded text, no explanations.",
     group: "action"
   },
-  { 
-    id: "professional-tone", 
-    label: "Professional Tone", 
-    icon: "💼", 
+  {
+    id: "professional-tone",
+    label: "Professional Tone",
+    icon: "💼",
     shortcut: "P",
     isDefault: true,
     prompt: "You are a business writing expert. Rewrite the text in a formal, professional tone. Suitable for business emails and documents. Return ONLY the rewritten text, no explanations.",
     group: "action"
   },
-  { 
-    id: "casual-tone", 
-    label: "Casual Tone", 
-    icon: "😊", 
+  {
+    id: "casual-tone",
+    label: "Casual Tone",
+    icon: "😊",
     shortcut: "C",
     isDefault: true,
     prompt: "You are a casual writing expert. Rewrite the text in a relaxed, informal tone. Keep it friendly and conversational. Return ONLY the rewritten text, no explanations.",
     group: "action"
   },
-  { 
-    id: "friendly-tone", 
-    label: "Friendly Tone", 
-    icon: "🤝", 
+  {
+    id: "friendly-tone",
+    label: "Friendly Tone",
+    icon: "🤝",
     shortcut: "Y",
     isDefault: true,
     prompt: "You are a warm communication expert. Rewrite the text in a friendly, approachable tone. Add warmth while keeping the message clear. Return ONLY the rewritten text, no explanations.",
     group: "action"
   },
-  { 
-    id: "email-writer", 
-    label: "Write Email", 
-    icon: "📧", 
+  {
+    id: "email-writer",
+    label: "Write Email",
+    icon: "📧",
     shortcut: "M",
     isDefault: true,
     prompt: "You are an email writing expert. Transform the text into a well-structured email. Add appropriate greeting and sign-off. Format professionally. Return ONLY the email text, no explanations.",
     group: "action"
   },
-  { 
-    id: "custom", 
-    label: "Custom Prompt", 
-    icon: "⚡", 
+  {
+    id: "custom",
+    label: "Custom Prompt",
+    icon: "⚡",
     shortcut: "K",
     isDefault: true,
     group: "action"
@@ -117,24 +117,26 @@ export function getDefaultActions(): Action[] {
 
 export function loadActions(): Action[] {
   if (typeof window === "undefined") return getDefaultActions();
-  
+
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
       const parsed: Action[] = JSON.parse(saved);
+      // Filter out legacy prep-mode action (replaced by text-agent)
+      const filteredParsed = parsed.filter(a => a.id !== "prep-mode");
       const defaultIds = DEFAULT_ACTIONS.map(a => a.id);
-      const savedIds = parsed.map(a => a.id);
-      
+      const savedIds = filteredParsed.map(a => a.id);
+
       const missingDefaults = DEFAULT_ACTIONS.filter(
         d => !savedIds.includes(d.id)
       );
-      
-      return [...parsed, ...missingDefaults];
+
+      return [...filteredParsed, ...missingDefaults];
     } catch {
       return getDefaultActions();
     }
   }
-  
+
   const defaults = getDefaultActions();
   saveActions(defaults);
   return defaults;
