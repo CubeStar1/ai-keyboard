@@ -42,35 +42,35 @@ config = {
         }
     },
     "vector_store": {
-        # "provider": "supabase",
-        # "config": {
-        #     "connection_string": supabase_connection_string,
-        #     "collection_name": os.environ.get("SUPABASE_COLLECTION_NAME", "memories"),
-        #     "index_method": os.environ.get("SUPABASE_INDEX_METHOD", "hnsw"),
-        #     "index_measure": os.environ.get("SUPABASE_INDEX_MEASURE", "cosine_distance")
-        # }
-        "provider": "chroma",
+        "provider": "supabase",
         "config": {
-            "collection_name": "memories",
-            "path": "db",
+            "connection_string": supabase_connection_string,
+            "collection_name": os.environ.get("SUPABASE_COLLECTION_NAME", "memories"),
+            "index_method": os.environ.get("SUPABASE_INDEX_METHOD", "hnsw"),
+            "index_measure": os.environ.get("SUPABASE_INDEX_MEASURE", "cosine_distance")
         }
+        # "provider": "chroma",
+        # "config": {
+        #     "collection_name": "memories",
+        #     "path": "db",
+        # }
     }
 }
 
-# if neo4j_url and neo4j_password:
-#     config["graph_store"] = {
-#         "provider": "neo4j",
-#         "config": {
-#             "url": neo4j_url,
-#             "username": neo4j_username,
-#             "password": neo4j_password,
-#         }
-#     }
+if neo4j_url and neo4j_password:
+    config["graph_store"] = {
+        "provider": "neo4j",
+        "config": {
+            "url": neo4j_url,
+            "username": neo4j_username,
+            "password": neo4j_password,
+        }
+    }
 
 print("=" * 50)
 print("MEM0 CONFIGURATION:")
-print(f"  Vector Store: chroma")
-# print(f"  Graph Store: {'neo4j' if 'graph_store' in config else 'disabled'}")
+print(f"  Vector Store: supabase")
+print(f"  Graph Store: {'neo4j' if 'graph_store' in config else 'disabled'}")
 print("=" * 50)
 
 memory = Memory.from_config(config)

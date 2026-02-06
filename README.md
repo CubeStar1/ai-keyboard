@@ -112,7 +112,11 @@ cd ai-keyboard
 cd frontend
 pnpm install
 
-# Backend
+# Next.js Backend
+cd ../nextjs-backend
+pnpm install
+
+# Memory Backend
 cd ../backend
 uv sync
 ```
@@ -141,6 +145,9 @@ Create the environment files from the examples:
 # Frontend
 cp frontend/env.example frontend/.env.local
 
+# Next.js Backend
+cp nextjs-backend/env.example nextjs-backend/.env
+
 # Backend
 cp backend/env.example backend/.env
 ```
@@ -152,16 +159,26 @@ NEXT_PUBLIC_SUPABASE_URL=""
 NEXT_PUBLIC_SUPABASE_ANON_KEY=""
 SUPABASE_ADMIN=""
 
-RESEND_API_KEY=""
-RESEND_DOMAIN=""
-
 NEXT_PUBLIC_APP_NAME="AI Keyboard"
 NEXT_PUBLIC_APP_ICON="/ai-kb-logo.png"
+
+NEXT_PUBLIC_API_URL="http://localhost:3001"
+NEXT_PUBLIC_MEMORY_API_URL="http://localhost:8000"
+```
+
+**Next.js Backend** (`nextjs-backend/.env`):
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=""
+NEXT_PUBLIC_SUPABASE_ANON_KEY=""
+SUPABASE_ADMIN=""
+
+RESEND_API_KEY=""
+RESEND_DOMAIN=""
 
 # AI Providers
 OPENAI_API_KEY=""
 GOOGLE_GENERATIVE_AI_API_KEY=""
-XAI_API_KEY=""
 GROQ_API_KEY=""
 CEREBRAS_API_KEY=""
 OPENROUTER_API_KEY=""
@@ -190,18 +207,23 @@ AURA_INSTANCENAME=
 cd backend
 uv run main.py
 
-# Terminal 2: Start Windows MCP server
+# Terminal 2: Start Next.js backend
+cd nextjs-backend
+npm run dev
+
+# Terminal 3: Start Windows MCP server
 cd frontend
 npm run windows-mcp
 
-# Terminal 3: Start Electron app
+# Terminal 4: Start Electron app
 cd frontend
 npm run dev
 ```
 
 The app will start with:
 
-- Next.js at `http://localhost:3000`
+- Frontend app at `http://localhost:3000`
+- Next.js Backend at `http://localhost:3001`
 - Memory API at `http://localhost:8000`
 - Windows MCP at `http://localhost:8001`
 
@@ -224,14 +246,15 @@ ai-keyboard/
 │   ├── text-handler.ts   # Clipboard, typewriter mode
 │   └── context-capture.ts # Periodic screenshot capture
 ├── src/
-│       ├── app/              # Next.js pages & API routes
+│       ├── app/              # Next.js pages
 │       ├── components/       # React components
 │       │   ├── action-menu/  # Main AI menu, copilot, chat
 │       │   ├── brain-panel/  # Memory dashboard
 │       │   └── ai-elements/  # Message rendering
-│       └── lib/ai/           # AI providers, tools, types
 ├── backend/                  # FastAPI memory server
 │   └── main.py               # Mem0 API endpoints
+├── nextjs-backend/           # Shared API backend
+│   └── src/app/api/          # Shared AI and auth routes
 └── PS.md                     # Problem statement
 ```
 
