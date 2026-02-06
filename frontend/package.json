@@ -12,7 +12,7 @@
     "electron:build": "tsup",
     "electron:dev": "npm-run-all --parallel electron:build_watch electron:watch",
     "electron:dist:deb": "electron-builder --linux deb",
-    "electron:dist": "electron-builder --dir",
+    "electron:dist": "electron-builder",
     "electron:watch": "cross-env NODE_ENV='development' nodemon",
     "format": "dprint fmt",
     "next:build": "next build --turbopack",
@@ -129,9 +129,12 @@
   },
   "build": {
     "asar": true,
-    "executableName": "NextJSElectron",
-    "appId": "com.saybackend.nextjs-electron",
+    "productName": "Tabby",
+    "executableName": "Tabby",
+    "appId": "com.tabby.ai-keyboard",
+    "icon": "public/icons/icon.png",
     "asarUnpack": [
+      "public",
       "node_modules/next",
       "node_modules/@img",
       "node_modules/sharp",
@@ -139,6 +142,7 @@
     ],
     "files": [
       "build",
+      "public",
       {
         "from": ".next/standalone",
         "to": "app",
@@ -156,16 +160,29 @@
         "to": "app/public"
       }
     ],
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icons/icon.ico",
+      "uninstallerIcon": "public/icons/icon.ico",
+      "installerHeaderIcon": "public/icons/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Tabby"
+    },
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "icon": "public/icons/icon.ico"
     },
     "linux": {
       "target": [
         "deb"
       ],
-      "category": "Development"
+      "category": "Development",
+      "icon": "public/icons"
     }
   }
 }
