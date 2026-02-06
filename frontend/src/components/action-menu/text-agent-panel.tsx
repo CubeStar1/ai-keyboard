@@ -6,6 +6,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Action, ActionType } from "@/lib/ai/types";
 import { loadActions, getActionPrompt } from "@/lib/ai/actions-store";
+import { getApiUrl } from "@/lib/api-url";
 import { ResultPanel } from "./result-panel";
 import { Kbd } from "@/components/ui/kbd";
 import { ArrowLeft, X } from "lucide-react";
@@ -46,7 +47,8 @@ export function TextAgentPanel({
 
     const { messages, status, sendMessage, setMessages } = useChat({
         transport: new DefaultChatTransport({
-            api: "/api/completion",
+            api: getApiUrl("/api/completion"),
+            credentials: "include",
         }),
         generateId: () => generateUUID(),
         onError: (error) => {

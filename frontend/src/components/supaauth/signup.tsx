@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input'
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { verifyOtp } from '@/actions/auth'
+import { getApiUrl } from '@/lib/api-url'
 import { toast } from 'sonner'
 import { usePathname, useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
@@ -78,13 +78,14 @@ export default function SignUp({ redirectTo }: { redirectTo: string }) {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include' as RequestCredentials,
       body: JSON.stringify({
         email,
         password,
       }),
     }
     // Send the POST request
-    const res = await fetch('/api/auth/signup', requestOptions)
+    const res = await fetch(getApiUrl('/api/auth/signup'), requestOptions)
     const json = await res.json()
     return json
   }
@@ -237,11 +238,17 @@ export default function SignUp({ redirectTo }: { redirectTo: string }) {
             onChange={async (value) => {
               if (value.length === 6) {
                 document.getElementById('input-otp')?.blur()
-                const res = await verifyOtp({
-                  email: form.getValues('email'),
-                  otp: value,
-                  type: 'email',
+                const response = await fetch(getApiUrl('/api/auth/verify-otp'), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    email: form.getValues('email'),
+                    otp: value,
+                    type: 'email',
+                  }),
                 })
+                const res = await response.text()
                 const { error, data } = JSON.parse(res)
                 if (error) {
                   setVerifyStatus('failed')

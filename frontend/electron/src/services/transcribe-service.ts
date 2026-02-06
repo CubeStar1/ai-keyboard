@@ -1,5 +1,6 @@
-import { AppState, getPort, VoiceMode } from "../app-state";
+import { AppState, VoiceMode } from "../app-state";
 import { sendTextToLastWindow, captureLastActiveWindow } from "./text-handler";
+import { getApiUrl } from "../utils/api-url";
 
 interface TranscribeResult {
   text: string;
@@ -74,7 +75,7 @@ export class TranscribeService {
       }
     }
 
-    const response = await fetch(`http://localhost:${getPort()}${endpoints[mode]}`, {
+    const response = await fetch(getApiUrl(endpoints[mode]), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

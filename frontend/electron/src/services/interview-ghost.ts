@@ -1,5 +1,6 @@
 import { desktopCapturer } from 'electron';
-import { AppState, getPort } from '../app-state';
+import { AppState } from '../app-state';
+import { getApiUrl } from '../utils/api-url';
 
 export interface InterviewGhostConfig {
   onSuggestionReady: (code: string) => void;
@@ -45,7 +46,7 @@ export class InterviewGhostService {
       console.log('[InterviewGhost] Screenshot captured, calling API...');
 
       // Call the API
-      const response = await fetch(`http://localhost:${getPort()}/api/interview-ghost-suggest`, {
+      const response = await fetch(getApiUrl('/api/interview-ghost-suggest'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

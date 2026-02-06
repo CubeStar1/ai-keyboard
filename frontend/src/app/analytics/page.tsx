@@ -35,6 +35,7 @@ import {
   Clock,
   Users,
 } from "lucide-react";
+import { getApiUrl } from "@/lib/api-url";
 
 type TimePeriod = "minute" | "hour" | "day";
 
@@ -55,14 +56,18 @@ interface StatsData {
 }
 
 async function fetchAnalytics(period: TimePeriod): Promise<AnalyticsData> {
-  const res = await fetch(`/api/dashboard/analytics?period=${period}`);
+  const res = await fetch(getApiUrl(`/api/dashboard/analytics?period=${period}`), {
+    credentials: "include",
+  });
   const data = await res.json();
   if (!data.success) throw new Error("Failed to fetch analytics");
   return data.data;
 }
 
 async function fetchStats(): Promise<StatsData> {
-  const res = await fetch("/api/dashboard/stats");
+  const res = await fetch(getApiUrl("/api/dashboard/stats"), {
+    credentials: "include",
+  });
   const data = await res.json();
   if (!data.success) throw new Error("Failed to fetch stats");
   return data.data;

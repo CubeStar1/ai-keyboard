@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
+import { getApiUrl } from "@/lib/api-url";
 
 interface UseSpeechPlaybackReturn {
   isPlaying: boolean;
@@ -26,9 +27,10 @@ export function useSpeechPlayback(): UseSpeechPlaybackReturn {
     try {
       stopPlayback();
 
-      const response = await fetch("/api/speech", {
+      const response = await fetch(getApiUrl("/api/speech"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ text, voice: "alloy" }),
       });
 

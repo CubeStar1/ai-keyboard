@@ -14,11 +14,12 @@ import { InterviewHistory } from "./interview-history";
 import { PrepChatMessages } from "./prep-chat-messages";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import { PrepAnalysis, Conversation as ConversationType } from "@/lib/ai/types";
+import { getApiUrl } from "@/lib/api-url";
 import {
   getPrepConversations,
   getConversationMessages,
   deleteConversation,
-} from "@/actions/chat";
+} from "@/lib/conversations-api";
 import {
   PrepPatternTab,
   PrepHintsTab,
@@ -60,7 +61,8 @@ export function PrepModePanel({ onBack, onClose }: PrepModePanelProps) {
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new DefaultChatTransport({
-      api: "/api/prep-mode",
+      api: getApiUrl("/api/prep-mode"),
+      credentials: "include",
     }),
     generateId: () => generateUUID(),
     onError: (error) => {

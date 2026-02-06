@@ -15,6 +15,7 @@ import { AnalyticsChart } from "@/components/dashboard/analytics-chart";
 import { UserProfileCard } from "@/components/dashboard/user-profile-card";
 import { UserMemoriesPanel } from "@/components/dashboard/user-memories-panel";
 import { WelcomeSection } from "@/components/dashboard/welcome-section";
+import { getApiUrl } from "@/lib/api-url";
 
 interface DashboardStats {
   totalCompletions: number;
@@ -32,7 +33,9 @@ interface DashboardStats {
 }
 
 async function fetchStats(): Promise<DashboardStats> {
-  const res = await fetch("/api/dashboard/stats");
+  const res = await fetch(getApiUrl("/api/dashboard/stats"), {
+    credentials: "include",
+  });
   const data = await res.json();
   if (!data.success) throw new Error("Failed to fetch stats");
   return data.data;

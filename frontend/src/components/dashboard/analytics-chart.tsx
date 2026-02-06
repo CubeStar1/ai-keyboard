@@ -7,6 +7,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { getApiUrl } from "@/lib/api-url";
 
 // Neutral grayscale colors for the pie chart
 const CHART_COLORS = [
@@ -47,7 +48,9 @@ interface DistributionData {
 }
 
 async function fetchDistribution(): Promise<DistributionData[]> {
-  const res = await fetch("/api/dashboard/analytics?period=day");
+  const res = await fetch(getApiUrl("/api/dashboard/analytics?period=day"), {
+    credentials: "include",
+  });
   const data = await res.json();
   if (!data.success) throw new Error("Failed to fetch distribution");
   return data.data.distribution;

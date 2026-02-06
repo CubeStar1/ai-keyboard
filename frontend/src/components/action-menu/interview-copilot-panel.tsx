@@ -15,11 +15,12 @@ import { InterviewHistory } from "./interview-history";
 import { InterviewChatMessages } from "./interview-chat-messages";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import { InterviewAnalysis, Conversation as ConversationType } from "@/lib/ai/types";
+import { getApiUrl } from "@/lib/api-url";
 import {
   getInterviewConversations,
   getConversationMessages,
   deleteConversation,
-} from "@/actions/chat";
+} from "@/lib/conversations-api";
 import {
   AnalyzingLoading,
   IdeaLoading,
@@ -57,7 +58,8 @@ export function InterviewCopilotPanel({ onBack, onClose, onReplace }: InterviewC
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new DefaultChatTransport({
-      api: "/api/interview-copilot",
+      api: getApiUrl("/api/interview-copilot"),
+      credentials: "include",
     }),
     generateId: () => generateUUID(),
     onError: (error) => {

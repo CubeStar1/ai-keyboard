@@ -1,6 +1,7 @@
 import { is } from "@electron-toolkit/utils";
 import { clipboard } from "electron";
-import { AppState, getPort } from "../app-state";
+import { AppState } from "../app-state";
+import { getApiUrl } from "../utils/api-url";
 import { ContextCaptureService } from "./context-capture";
 import { GhostTextOverlay } from "./ghost-overlay";
 import { InterviewGhostService } from "./interview-ghost";
@@ -22,7 +23,7 @@ export const createKeyboardMonitor = (): KeyboardMonitor => {
     },
     getSuggestion: async (context, signal) => {
       try {
-        const response = await fetch(`http://localhost:${getPort()}/api/suggest-inline`, {
+        const response = await fetch(getApiUrl('/api/suggest-inline'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

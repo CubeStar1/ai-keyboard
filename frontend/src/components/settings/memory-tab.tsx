@@ -64,7 +64,7 @@ interface SearchMemoriesResponse {
   };
 }
 
-const MEMORY_API_URL = "http://localhost:8000";
+const MEMORY_API_URL = process.env.NEXT_PUBLIC_MEMORY_API_URL || "http://localhost:8000";
 
 async function fetchAllMemories(userId: string): Promise<Memory[]> {
   const response = await fetch(`${MEMORY_API_URL}/memory/get_all`, {

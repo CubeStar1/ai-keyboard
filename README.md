@@ -242,6 +242,11 @@ ai-keyboard/
 | `Ctrl+\`       | Global     | Open/close action menu      |
 | `Ctrl+Space`   | Global     | Get AI suggestion           |
 | `Ctrl+Shift+B` | Global     | Toggle brain panel          |
+| `Ctrl+Alt+I`   | Global     | Interview ghost text        |
+| `Ctrl+Alt+J`   | Global     | Voice Agent                 |
+| `Ctrl+Shift+X` | Global     | Stop Autotyping             |
+| `Ctrl+Shift+T` | Global     | Cycle Transcribe modes      |
+| `Ctrl+Alt+T`   | Global     | Toggle voice transcription  |
 | `Alt+X`        | Copilot    | Analyze coding problem      |
 | `Alt+Shift+X`  | Copilot    | Update with new constraints |
 | `Alt+N`        | Copilot    | Code suggestions            |

@@ -8,6 +8,8 @@ onlyBuiltDependencies:
   - electron
   - electron-winstaller
   - esbuild
+  - ffi-napi
+  - ref-napi
   - sharp
   - uiohook-napi
   - unrs-resolver

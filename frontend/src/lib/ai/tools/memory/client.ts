@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { getMemoryApiUrl } from '@/lib/api-url'
 
-const MEMORY_API_URL = process.env.MEMORY_API_URL || 'http://localhost:8000'
+const MEMORY_API_URL = process.env.NEXT_PUBLIC_MEMORY_API_URL || 'http://localhost:8000'
 
 export const memoryClient = axios.create({
   baseURL: MEMORY_API_URL,

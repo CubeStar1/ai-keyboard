@@ -7,6 +7,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Sparkles, Loader2 } from "lucide-react";
 import { ChatMessages } from "@/components/chat/chat-messages";
 import { generateUUID } from "@/lib/utils/generate-uuid";
+import { getApiUrl } from "@/lib/api-url";
 
 export default function SuggestionPage() {
   const lastContextRef = useRef<string>("");
@@ -14,7 +15,8 @@ export default function SuggestionPage() {
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new DefaultChatTransport({
-      api: "/api/suggest",
+      api: getApiUrl("/api/suggest"),
+      credentials: "include",
     }),
     generateId: () => generateUUID(),
     onError: (error) => {

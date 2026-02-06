@@ -13,7 +13,7 @@ interface Memory {
   created_at: string
 }
 
-const MEMORY_API_URL = "http://localhost:8000"
+const MEMORY_API_URL = process.env.NEXT_PUBLIC_MEMORY_API_URL || "http://localhost:8000"
 
 async function fetchRecentMemories(userId: string): Promise<Memory[]> {
   const response = await fetch(`${MEMORY_API_URL}/memory/get_all`, {

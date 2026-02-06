@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/chart";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getApiUrl } from "@/lib/api-url";
 
 const chartConfig = {
   completions: {
@@ -32,7 +33,9 @@ interface AnalyticsData {
 }
 
 async function fetchAnalytics(period: TimePeriod): Promise<AnalyticsData> {
-  const res = await fetch(`/api/dashboard/analytics?period=${period}`);
+  const res = await fetch(getApiUrl(`/api/dashboard/analytics?period=${period}`), {
+    credentials: "include",
+  });
   const data = await res.json();
   if (!data.success) throw new Error("Failed to fetch analytics");
   return data.data;
