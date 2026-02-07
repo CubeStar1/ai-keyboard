@@ -31,29 +31,16 @@ jobs:
           cd frontend
           pnpm install
 
-      - name: Create .env file
-        run: |
-          "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" | Out-File -FilePath frontend/.env -Encoding ascii
-          "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | Out-File -FilePath frontend/.env -Append -Encoding ascii
-          "SUPABASE_ADMIN=${{ secrets.SUPABASE_ADMIN }}" | Out-File -FilePath frontend/.env -Append -Encoding ascii
-          "NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}" | Out-File -FilePath frontend/.env -Append -Encoding ascii
-          "NEXT_PUBLIC_APP_ICON=${{ secrets.NEXT_PUBLIC_APP_ICON }}" | Out-File -FilePath frontend/.env -Append -Encoding ascii
-          "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" | Out-File -FilePath frontend/.env -Append -Encoding ascii
-          "NEXT_PUBLIC_MEMORY_API_URL=${{ secrets.NEXT_PUBLIC_MEMORY_API_URL }}" | Out-File -FilePath frontend/.env -Append -Encoding ascii
-
-      - name: Verify .env file
-        run: |
-          Write-Host "=== .env file verification ==="
-          Get-Content frontend/.env | ForEach-Object {
-            $parts = $_.Split('=', 2)
-            $key = $parts[0]
-            $hasValue = if ($parts.Length -gt 1 -and $parts[1].Trim()) { "✓ has value" } else { "✗ EMPTY!" }
-            Write-Host "$key : $hasValue"
-          }
-
       - name: Build and Publish
         run: |
           cd frontend
           pnpm run dist
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_ADMIN: ${{ secrets.SUPABASE_ADMIN }}
+          NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+          NEXT_PUBLIC_APP_ICON: ${{ secrets.NEXT_PUBLIC_APP_ICON }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_MEMORY_API_URL: ${{ secrets.NEXT_PUBLIC_MEMORY_API_URL }}
