@@ -1,9 +1,12 @@
+packages:
+  - "."
+
 ignoredBuiltDependencies:
   - extract-file-icon
   - node-window-manager
 
 onlyBuiltDependencies:
-  - '@tailwindcss/oxide'
+  - "@tailwindcss/oxide"
   - dprint
   - electron
   - electron-winstaller

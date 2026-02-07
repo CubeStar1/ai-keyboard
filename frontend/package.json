@@ -27,7 +27,7 @@
     "windows-mcp": "uvx windows-mcp --transport streamable-http --port 8001",
     "leetcode-mcp": "npx -y @jinzcdev/leetcode-mcp-server --site global",
     "typecheck": "tsc --noEmit",
-    "release": "git tag v$(node -p \"require('./package.json').version\") && git push origin --tags"
+    "release": "node -e \"const v=require('./package.json').version; require('child_process').execSync(`git tag v${v} && git push origin --tags`, {stdio: 'inherit'})\""
   },
   "dependencies": {
     "@ai-sdk/cerebras": "^2.0.5",
