@@ -236,6 +236,37 @@ The app runs in the system tray. Right-click for:
 - Settings
 - Quit
 
+## Building & Releasing
+
+### Local Build
+
+To create a local production executable for Windows:
+
+```bash
+cd frontend
+npm run dist
+```
+
+The resulting `.exe` will be in `frontend/dist`.
+
+### GitHub Releases
+
+Automated releases are set up using GitHub Actions.
+
+1. **GitHub Secrets**: Add these secrets to your repository settings:
+   - `GH_TOKEN`: Your GitHub Personal Access Token (classic) with `repo` scope.
+   - All `NEXT_PUBLIC_*` and `SUPABASE_*` variables from your `.env.local`.
+2. **Trigger Release**: Run this from the `frontend` directory:
+   ```bash
+   npm run release
+   ```
+   This will automatically:
+
+- Grab the version from `package.json`.
+- Create a Git tag (e.g., `v0.1.0`).
+- Push the tag to GitHub.
+- Trigger a GitHub Action to build the Windows `.exe` and create a GitHub Release.
+
 ## Project Structure
 
 ```
