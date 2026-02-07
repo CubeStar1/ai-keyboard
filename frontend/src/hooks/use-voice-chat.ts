@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { TextPart, ToolUIPart } from "ai";
 import { generateUUID } from "@/lib/utils/generate-uuid";
-import { getApiUrl } from "@/lib/api-url";
+import { getApiUrl, getAuthHeaders } from "@/lib/api-url";
 import {
   UIMessageWithCompleted,
   VoiceChatSession,
@@ -127,10 +127,12 @@ export function useVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
   }, []);
 
   const createSession = useCallback(async (): Promise<OpenAIRealtimeSession> => {
+    const authHeaders = await getAuthHeaders();
     const response = await fetch(getApiUrl(`/api/voice-agent`), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders,
       },
       credentials: "include",
       body: JSON.stringify({ model, voice }),
@@ -215,9 +217,10 @@ export function useVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
       } else {
         // Execute MCP tool via API
         try {
+          const authHeaders = await getAuthHeaders();
           const response = await fetch(getApiUrl("/api/voice-agent/execute-tool"), {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...authHeaders },
             credentials: "include",
             body: JSON.stringify({ toolName, args: toolArgs }),
           });

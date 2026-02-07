@@ -14,7 +14,7 @@ import {
   getAllMemoriesTool,
 } from "@/lib/ai/tools/memory";
 import { generateUUID } from "@/lib/utils/generate-uuid";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth";
 
 const getSystemPrompt = (userId: string) => `You are a SENTENCE COMPLETION engine with PERSISTENT MEMORY.
 
@@ -91,18 +91,15 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
-  let userId = bodyUserId;
+  let userId: string | undefined = bodyUserId;
   
   if (!userId) {
-    const supabase = await createSupabaseServer();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const authenticatedId = await getAuthenticatedUserId(req);
 
-    if (!user) {
+    if (!authenticatedId) {
       return new Response("Unauthorized", { status: 401 });
     }
-    userId = user.id;
+    userId = authenticatedId;
   }
 
   const modelMessages = await convertToModelMessages(messages);

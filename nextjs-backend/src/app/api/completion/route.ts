@@ -16,7 +16,7 @@ import {
 } from "@/lib/ai/tools/memory";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import { defaultModel } from "@/lib/ai/models";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth";
 
 const getSystemPrompt = (userId: string) => `You are an intelligent inline writing assistant integrated into an AI-powered keyboard. Your role is to provide seamless, contextually-aware text completions and transformations that feel natural and personalized.
 
@@ -97,18 +97,15 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
-  let userId = bodyUserId;
+  let userId: string | undefined = bodyUserId;
   
   if (!userId) {
-    const supabase = await createSupabaseServer();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const authenticatedId = await getAuthenticatedUserId(req);
 
-    if (!user) {
+    if (!authenticatedId) {
       return new Response("Unauthorized", { status: 401 });
     }
-    userId = user.id;
+    userId = authenticatedId;
   }
 
   console.log("API received:", { action, customPrompt: customPrompt?.slice(0, 50) });

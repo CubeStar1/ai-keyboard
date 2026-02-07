@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { UIMessage, DefaultChatTransport } from "ai";
+import { UIMessage } from "ai";
 import { parsePartialJson } from "@ai-sdk/ui-utils";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -15,7 +15,7 @@ import { InterviewHistory } from "./interview-history";
 import { InterviewChatMessages } from "./interview-chat-messages";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import { InterviewAnalysis, Conversation as ConversationType } from "@/lib/ai/types";
-import { getApiUrl } from "@/lib/api-url";
+import { createAuthenticatedChatTransport } from "@/lib/api-url";
 import {
   getInterviewConversations,
   getConversationMessages,
@@ -57,10 +57,7 @@ export function InterviewCopilotPanel({ onBack, onClose, onReplace }: InterviewC
 
 
   const { messages, status, sendMessage, setMessages } = useChat({
-    transport: new DefaultChatTransport({
-      api: getApiUrl("/api/interview-copilot"),
-      credentials: "include",
-    }),
+    transport: createAuthenticatedChatTransport("/api/interview-copilot"),
     generateId: () => generateUUID(),
     onError: (error) => {
       console.error("Interview Copilot error:", error);

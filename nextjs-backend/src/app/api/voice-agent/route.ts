@@ -7,7 +7,7 @@ import {
   getAllMemoriesTool,
 } from "@/lib/ai/tools/memory";
 import { DEFAULT_VOICE_TOOLS, OPENAI_VOICE } from "@/lib/ai/voice";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth";
 
 const getSystemPrompt = (userId: string) => `You are a voice AI assistant integrated into an intelligent keyboard. You help users with tasks, answer questions, and assist with desktop automation. Speak naturally and conversationally - avoid markdown, bullet points, or code blocks in your responses.
 
@@ -182,16 +182,11 @@ export async function POST(request: NextRequest) {
       voice?: string;
     };
 
-    const supabase = await createSupabaseServer();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const userId = await getAuthenticatedUserId(request);
 
-    if (!user) {
+    if (!userId) {
       return new Response("Unauthorized", { status: 401 });
     }
-
-    const userId = user.id;
 
     const mcpTools = await getMCPTools();
     const mcpToolNames = Object.keys(mcpTools);

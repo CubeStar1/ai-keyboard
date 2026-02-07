@@ -18,7 +18,7 @@ import {
   getChatById,
   generateTitleFromUserMessage,
 } from "@/actions/chat";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth";
 
 const analysisSchema = z.object({
   idea: z.string().describe("Problem understanding, key observations, approaches"),
@@ -153,16 +153,11 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId(req);
 
-  if (!user) {
+  if (!userId) {
     return new Response("Unauthorized", { status: 401 });
   }
-
-  const userId = user.id;
 
   const userMessage = messages[messages.length - 1];
 

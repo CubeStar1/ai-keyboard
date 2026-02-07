@@ -3,15 +3,13 @@
  * These replace the server actions with direct API calls to the backend.
  */
 
-import { getApiUrl } from "@/lib/api-url";
+import { getApiUrl, createAuthenticatedFetchOptions } from "@/lib/api-url";
 import { Conversation } from "@/lib/ai/types";
 import { UIMessage } from "ai";
 
 export async function getConversations(): Promise<Conversation[]> {
-  const response = await fetch(getApiUrl("/api/conversations"), {
-    method: "GET",
-    credentials: "include",
-  });
+  const options = await createAuthenticatedFetchOptions({ method: "GET" });
+  const response = await fetch(getApiUrl("/api/conversations"), options);
   const data = await response.json();
   if (!data.success) {
     console.error("Error fetching conversations:", data.error);
@@ -21,10 +19,8 @@ export async function getConversations(): Promise<Conversation[]> {
 }
 
 export async function getInterviewConversations(): Promise<Conversation[]> {
-  const response = await fetch(getApiUrl("/api/conversations?type=interview"), {
-    method: "GET",
-    credentials: "include",
-  });
+  const options = await createAuthenticatedFetchOptions({ method: "GET" });
+  const response = await fetch(getApiUrl("/api/conversations?type=interview"), options);
   const data = await response.json();
   if (!data.success) {
     console.error("Error fetching interview conversations:", data.error);
@@ -34,10 +30,8 @@ export async function getInterviewConversations(): Promise<Conversation[]> {
 }
 
 export async function getPrepConversations(): Promise<Conversation[]> {
-  const response = await fetch(getApiUrl("/api/conversations?type=prep"), {
-    method: "GET",
-    credentials: "include",
-  });
+  const options = await createAuthenticatedFetchOptions({ method: "GET" });
+  const response = await fetch(getApiUrl("/api/conversations?type=prep"), options);
   const data = await response.json();
   if (!data.success) {
     console.error("Error fetching prep conversations:", data.error);
@@ -49,12 +43,10 @@ export async function getPrepConversations(): Promise<Conversation[]> {
 export async function getConversationMessages(
   conversationId: string
 ): Promise<UIMessage[]> {
+  const options = await createAuthenticatedFetchOptions({ method: "GET" });
   const response = await fetch(
     getApiUrl(`/api/conversations/${conversationId}/messages`),
-    {
-      method: "GET",
-      credentials: "include",
-    }
+    options
   );
   const data = await response.json();
   if (!data.success) {
@@ -67,12 +59,10 @@ export async function getConversationMessages(
 export async function deleteConversation(
   conversationId: string
 ): Promise<{ success: boolean }> {
+  const options = await createAuthenticatedFetchOptions({ method: "DELETE" });
   const response = await fetch(
     getApiUrl(`/api/conversations/${conversationId}`),
-    {
-      method: "DELETE",
-      credentials: "include",
-    }
+    options
   );
   const data = await response.json();
   if (!data.success) {
@@ -84,12 +74,10 @@ export async function deleteConversation(
 export async function getChatById(
   conversationId: string
 ): Promise<Conversation | null> {
+  const options = await createAuthenticatedFetchOptions({ method: "GET" });
   const response = await fetch(
     getApiUrl(`/api/conversations/${conversationId}`),
-    {
-      method: "GET",
-      credentials: "include",
-    }
+    options
   );
   const data = await response.json();
   if (!data.success) {
@@ -98,3 +86,4 @@ export async function getChatById(
   }
   return data.conversation;
 }
+

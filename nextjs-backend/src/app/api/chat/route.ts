@@ -15,7 +15,7 @@ import {
 } from "@/lib/ai/tools/memory";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import { defaultModel } from "@/lib/ai/models";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth";
 import {
   saveChat,
   saveMessages,
@@ -228,19 +228,17 @@ export async function POST(req: Request) {
     return new Response("Missing messages", { status: 400 });
   }
 
-  // Get authenticated user from Supabase or use userId from body
-  let userId = bodyUserId;
+  // Get authenticated user from cookies or Authorization header
+  // Also accepts userId from body as fallback (for internal calls)
+  let userId: string | undefined = bodyUserId;
   
   if (!userId) {
-    const supabase = await createSupabaseServer();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const authenticatedId = await getAuthenticatedUserId(req);
 
-    if (!user) {
+    if (!authenticatedId) {
       return new Response("Unauthorized", { status: 401 });
     }
-    userId = user.id;
+    userId = authenticatedId;
   }
 
   const mcpTools = await getMCPTools();

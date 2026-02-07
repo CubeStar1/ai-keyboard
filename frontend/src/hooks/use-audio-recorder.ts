@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
-import { getApiUrl } from "@/lib/api-url";
+import { getApiUrl, getAuthHeaders } from "@/lib/api-url";
 
 const MAX_RECORDING_DURATION_MS = 2 * 60 * 1000;
 
@@ -75,7 +75,10 @@ export function useAudioRecorder({
 
             const response = await fetch(getApiUrl("/api/transcribe"), {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { 
+                "Content-Type": "application/json",
+                ...(await getAuthHeaders()),
+              },
               credentials: "include",
               body: JSON.stringify({ audio: base64Data }),
             });

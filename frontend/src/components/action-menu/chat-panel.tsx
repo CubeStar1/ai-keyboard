@@ -39,8 +39,7 @@ import { VoiceInputButton } from "@/components/chat/voice-input-button";
 import { VoiceModeToggle, type VoiceMode } from "@/components/chat/voice-mode-toggle";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { useSpeechPlayback } from "@/hooks/use-speech-playback";
-import { getApiUrl } from "@/lib/api-url";
-import { DefaultChatTransport } from "ai";
+import { createAuthenticatedChatTransport } from "@/lib/api-url";
 interface ChatPanelProps {
   selectedText?: string;
   onBack: () => void;
@@ -60,10 +59,7 @@ export function ChatPanel({ selectedText, onBack, onClose }: ChatPanelProps) {
   const { isPlaying, playText, stopPlayback } = useSpeechPlayback();
 
   const { messages, status, sendMessage, setMessages } = useChat({
-    transport: new DefaultChatTransport({
-      api: getApiUrl("/api/chat"),
-      credentials: "include",
-    }),
+    transport: createAuthenticatedChatTransport("/api/chat"),
     generateId: () => generateUUID(),
     onError: (error) => {
       console.error("Chat error:", error);

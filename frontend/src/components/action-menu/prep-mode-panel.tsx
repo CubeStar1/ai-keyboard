@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useState, useCallback, useEffect } from "react";
-import { UIMessage, DefaultChatTransport } from "ai";
+import { UIMessage } from "ai";
 import { parsePartialJson } from "@ai-sdk/ui-utils";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -14,7 +14,7 @@ import { InterviewHistory } from "./interview-history";
 import { PrepChatMessages } from "./prep-chat-messages";
 import { generateUUID } from "@/lib/utils/generate-uuid";
 import { PrepAnalysis, Conversation as ConversationType } from "@/lib/ai/types";
-import { getApiUrl } from "@/lib/api-url";
+import { createAuthenticatedChatTransport } from "@/lib/api-url";
 import {
   getPrepConversations,
   getConversationMessages,
@@ -60,10 +60,7 @@ export function PrepModePanel({ onBack, onClose }: PrepModePanelProps) {
   const [hintLevel, setHintLevel] = useState(1);
 
   const { messages, status, sendMessage, setMessages } = useChat({
-    transport: new DefaultChatTransport({
-      api: getApiUrl("/api/prep-mode"),
-      credentials: "include",
-    }),
+    transport: createAuthenticatedChatTransport("/api/prep-mode"),
     generateId: () => generateUUID(),
     onError: (error) => {
       console.error("Prep Mode error:", error);

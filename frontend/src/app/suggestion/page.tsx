@@ -2,22 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { Kbd } from "@/components/ui/kbd";
 import { Sparkles, Loader2 } from "lucide-react";
 import { ChatMessages } from "@/components/chat/chat-messages";
 import { generateUUID } from "@/lib/utils/generate-uuid";
-import { getApiUrl } from "@/lib/api-url";
+import { createAuthenticatedChatTransport } from "@/lib/api-url";
 
 export default function SuggestionPage() {
   const lastContextRef = useRef<string>("");
   const isRequestingRef = useRef(false);
 
   const { messages, status, sendMessage, setMessages } = useChat({
-    transport: new DefaultChatTransport({
-      api: getApiUrl("/api/suggest"),
-      credentials: "include",
-    }),
+    transport: createAuthenticatedChatTransport("/api/suggest"),
     generateId: () => generateUUID(),
     onError: (error) => {
       console.error("Suggestion error:", error);

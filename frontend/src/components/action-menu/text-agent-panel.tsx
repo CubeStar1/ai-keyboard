@@ -3,10 +3,9 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { Action, ActionType } from "@/lib/ai/types";
 import { loadActions, getActionPrompt } from "@/lib/ai/actions-store";
-import { getApiUrl } from "@/lib/api-url";
+import { createAuthenticatedChatTransport } from "@/lib/api-url";
 import { ResultPanel } from "./result-panel";
 import { Kbd } from "@/components/ui/kbd";
 import { ArrowLeft, X } from "lucide-react";
@@ -46,10 +45,7 @@ export function TextAgentPanel({
     const { theme } = useTheme();
 
     const { messages, status, sendMessage, setMessages } = useChat({
-        transport: new DefaultChatTransport({
-            api: getApiUrl("/api/completion"),
-            credentials: "include",
-        }),
+        transport: createAuthenticatedChatTransport("/api/completion"),
         generateId: () => generateUUID(),
         onError: (error) => {
             console.error("Completion error:", error);

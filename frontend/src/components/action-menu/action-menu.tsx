@@ -3,10 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme } from "next-themes";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { Action, ActionType } from "@/lib/ai/types";
 import { loadActions, getActionPrompt, getActionByShortcut } from "@/lib/ai/actions-store";
-import { getApiUrl } from "@/lib/api-url";
+import { createAuthenticatedChatTransport } from "@/lib/api-url";
 import { ActionList } from "./action-list";
 import { ResultPanel } from "./result-panel";
 import { ChatPanel } from "./chat-panel";
@@ -47,10 +46,7 @@ export function ActionMenu({
   const { theme, setTheme } = useTheme();
 
   const { messages, status, sendMessage, setMessages } = useChat({
-    transport: new DefaultChatTransport({
-      api: getApiUrl("/api/completion"),
-      credentials: "include",
-    }),
+    transport: createAuthenticatedChatTransport("/api/completion"),
     generateId: () => generateUUID(),
     onError: (error) => {
       console.error("Completion error:", error);
