@@ -148,4 +148,8 @@ contextBridge.exposeInMainWorld("electron", {
   setDefaultModel: (model: string) => ipcRenderer.send("set-default-model", model),
   getDefaultFastModel: () => ipcRenderer.invoke("get-default-fast-model"),
   setDefaultFastModel: (model: string) => ipcRenderer.send("set-default-fast-model", model),
+
+  // Onboarding
+  getOnboardingComplete: () => ipcRenderer.invoke("get-onboarding-complete"),
+  setOnboardingComplete: (complete: boolean) => ipcRenderer.send("set-onboarding-complete", complete),
 });

@@ -4,6 +4,7 @@ import { registerWindowHandlers } from "./window-handlers";
 import { registerCaptureHandlers } from "./capture-handlers";
 import { registerTranscribeHandlers } from "./transcribe-handlers";
 import { registerVoiceAgentHandlers } from "./voice-agent-handlers";
+import { registerOnboardingHandlers } from "./onboarding-handlers";
 
 export const registerAllIpcHandlers = (): void => {
   registerTextHandlers();
@@ -12,6 +13,7 @@ export const registerAllIpcHandlers = (): void => {
   registerCaptureHandlers();
   registerTranscribeHandlers();
   registerVoiceAgentHandlers();
+  registerOnboardingHandlers();
 };
 
 export { registerTextHandlers } from "./text-handlers";
@@ -20,4 +22,5 @@ export { registerWindowHandlers } from "./window-handlers";
 export { registerCaptureHandlers } from "./capture-handlers";
 export { registerTranscribeHandlers } from "./transcribe-handlers";
 export { registerVoiceAgentHandlers, toggleVoiceAgentPanel } from "./voice-agent-handlers";
+export { registerOnboardingHandlers } from "./onboarding-handlers";
 

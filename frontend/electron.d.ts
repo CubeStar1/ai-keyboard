@@ -66,6 +66,9 @@ declare global {
       setDefaultModel: (model: string) => void;
       getDefaultFastModel: () => Promise<string>;
       setDefaultFastModel: (model: string) => void;
+      // Onboarding
+      getOnboardingComplete: () => Promise<boolean>;
+      setOnboardingComplete: (complete: boolean) => void;
     };
   }
 }

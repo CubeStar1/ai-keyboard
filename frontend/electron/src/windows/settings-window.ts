@@ -1,22 +1,35 @@
 import { is } from "@electron-toolkit/utils";
-import { BrowserWindow } from "electron";
+import { BrowserWindow, screen } from "electron";
 import { join } from "path";
 import { AppState } from "../app-state";
 import { getOrStartNextJSServer } from "./main-window";
 
-export const createSettingsWindow = (): BrowserWindow => {
+export const createSettingsWindow = (initialRoute: string = "/settings"): BrowserWindow => {
   if (AppState.settingsWindow) {
     AppState.settingsWindow.focus();
     return AppState.settingsWindow;
   }
 
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+
+  const windowWidth = Math.round(screenWidth * 0.7);
+  const windowHeight = Math.round(screenHeight * 0.8);
+
+  const x = Math.round((screenWidth - windowWidth) / 2);
+  const y = Math.round((screenHeight - windowHeight) / 2);
+
   AppState.settingsWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    minWidth: 600,
-    minHeight: 500,
+    width: windowWidth,
+    height: windowHeight,
+    minWidth: Math.round(screenWidth * 0.4),
+    minHeight: Math.round(screenHeight * 0.5),
+    x,
+    y,
     frame: true,
-    title: "AI Keyboard Settings",
+    autoHideMenuBar: true,
+    title: "AI Keyboard",
+    resizable: true,
     webPreferences: {
       preload: join(__dirname, "preload.js"),
       nodeIntegration: true,
@@ -27,10 +40,10 @@ export const createSettingsWindow = (): BrowserWindow => {
   AppState.settingsWindow.setContentProtection(true);
 
   if (is.dev) {
-    AppState.settingsWindow.loadURL("http://localhost:3000/settings");
+    AppState.settingsWindow.loadURL(`http://localhost:3000${initialRoute}`);
   } else {
     getOrStartNextJSServer().then((port) => {
-      AppState.settingsWindow?.loadURL(`http://localhost:${port}/settings`);
+      AppState.settingsWindow?.loadURL(`http://localhost:${port}${initialRoute}`);
     });
   }
 

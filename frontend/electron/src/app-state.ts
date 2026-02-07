@@ -42,6 +42,7 @@ export interface AppStateType {
   currentUserId: string | null;
   cachedMemories: string[];
   currentVoiceMode: VoiceMode;
+  onboardingComplete: boolean;
 }
 
 export const AppState: AppStateType = {
@@ -75,6 +76,7 @@ export const AppState: AppStateType = {
   currentUserId: store.get("userId") as string | null,
   cachedMemories: (store.get("cachedMemories") as string[]) || [],
   currentVoiceMode: "transcribe",
+  onboardingComplete: store.get("onboardingComplete") as boolean || false,
 };
 
 export const getStore = () => store;

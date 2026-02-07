@@ -38,8 +38,8 @@ export const getOrStartNextJSServer = async (): Promise<number> => {
 
 export const createMainWindow = (): BrowserWindow => {
   AppState.mainWindow = new BrowserWindow({
-    width: 500,
-    height: 500,
+    width: 600,
+    height: 700,
     minWidth: 400,
     minHeight: 400,
     maxWidth: 800,

@@ -137,9 +137,14 @@ export default function OnboardingPage() {
       // Mark onboarding as complete in localStorage and cookie
       localStorage.setItem("onboarding_complete", "true");
       setCookie("onboarding_complete", "true");
+      
+      // Sync with Electron store so main process knows onboarding is complete
+      if (typeof window !== "undefined" && (window as any).electron?.setOnboardingComplete) {
+        (window as any).electron.setOnboardingComplete(true);
+      }
 
       // Redirect to settings page
-      router.push("/");
+      router.push("/settings");
       router.refresh(); // Refresh to ensure middleware picks up new cookie
     } catch (error) {
       console.error("Failed to save onboarding data:", error);
@@ -483,6 +488,10 @@ export default function OnboardingPage() {
               onClick={() => {
                 localStorage.setItem("onboarding_complete", "true");
                 setCookie("onboarding_complete", "true");
+                // Sync with Electron store
+                if (typeof window !== "undefined" && (window as any).electron?.setOnboardingComplete) {
+                  (window as any).electron.setOnboardingComplete(true);
+                }
                 router.push("/settings");
                 router.refresh();
               }}

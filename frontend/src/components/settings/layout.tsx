@@ -14,7 +14,7 @@ export function SettingsLayout() {
   return (
     <div className="h-screen bg-white dark:bg-zinc-950 text-foreground flex flex-col overflow-hidden selection:bg-violet-100 dark:selection:bg-violet-900/30">
       <Tabs defaultValue="actions" className="flex flex-col h-full gap-0">
-        <div className="flex-none pt-3 px-6 pb-3 border-b bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl z-10 shrink-0 select-none drag-region flex items-center justify-between gap-4">
+        <div className="flex-none pt-3 px-6 pb-3 border-b bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl z-10 shrink-0 select-none flex items-center justify-between gap-4">
           <div className="text-sm font-semibold text-foreground whitespace-nowrap">AI Keyboard Settings</div>
           <TabsList className="bg-zinc-100 dark:bg-zinc-900 p-1 h-auto rounded-lg flex-none border border-zinc-200 dark:border-zinc-800">
             <TabsTrigger 
