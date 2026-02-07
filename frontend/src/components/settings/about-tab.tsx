@@ -1,17 +1,18 @@
 "use client";
 
 import Image from "next/image";
+import { SettingsPage } from "./settings-page";
 
-const appName = process.env.NEXT_PUBLIC_APP_NAME || "AI Keyboard";
-const appIcon = process.env.NEXT_PUBLIC_APP_ICON || "/ai-kb-logo.png";
+const appName = process.env.NEXT_PUBLIC_APP_NAME || "Tabby";
+const appIcon = process.env.NEXT_PUBLIC_APP_ICON || "/logos/tabby-logo.png";
 
 export function AboutTab() {
   return (
-    <div className="h-full flex flex-col items-center justify-center p-8">
-      <div className="text-center space-y-8 max-w-md">
+    <SettingsPage title="About" description="Version & links">
+      <div className="flex flex-col items-center text-center space-y-8 py-8">
         {/* Logo */}
         <div className="flex justify-center">
-          <div className="w-24 h-24 rounded-2xl overflow-hidden bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 flex items-center justify-center">
+          <div className="w-24 h-24 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center">
             <Image
               src={appIcon}
               alt={appName}
@@ -33,12 +34,12 @@ export function AboutTab() {
         </div>
 
         {/* Description */}
-        <p className="text-muted-foreground leading-relaxed font-light">
+        <p className="text-muted-foreground leading-relaxed font-light max-w-md">
           Your intelligent writing assistant. Enhance your workflow with AI-powered text transformations, coding interview assistance, and persistent memory.
         </p>
 
         {/* Divider */}
-        <div className="w-16 h-px bg-stone-200 dark:bg-zinc-800 mx-auto" />
+        <div className="w-16 h-px bg-zinc-200 dark:bg-zinc-800 mx-auto" />
 
         {/* Features */}
         <div className="grid grid-cols-3 gap-6 text-center pt-2">
@@ -66,6 +67,7 @@ export function AboutTab() {
           </p>
         </div>
       </div>
-    </div>
+    </SettingsPage>
   );
 }
+

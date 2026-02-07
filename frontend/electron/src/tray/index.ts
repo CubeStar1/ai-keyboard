@@ -6,11 +6,11 @@ import { createSettingsWindow } from "../windows/settings-window";
 import { app } from "electron";
 
 export const createTray = (): Tray => {
-  const iconPath = join(__dirname, "..", "..", "public", "ai-kb-logo.png");
+  const iconPath = join(__dirname, "..", "..", "public", "icons/icon.ico");
   const trayIcon = nativeImage.createFromPath(iconPath);
 
   AppState.tray = new Tray(trayIcon);
-  AppState.tray.setToolTip('AI Keyboard Assistant');
+  AppState.tray.setToolTip('Tabby');
 
   updateTrayMenu();
 

@@ -17,9 +17,9 @@ export async function POST(request: Request) {
 
 	if (res.data.properties?.email_otp) {
 		const resendRes = await resend.emails.send({
-			from: `AI Keyboard <onboarding@${process.env.RESEND_DOMAIN}>`,
+			from: `Tabby <onboarding@${process.env.RESEND_DOMAIN}>`,
 			to: [data.email],
-			subject: "AI Keyboard - Verify Email",
+			subject: "Tabby - Verify Email",
 			react: SupaAuthVerifyEmail({
 				verificationCode: res.data.properties?.email_otp,
 			}),

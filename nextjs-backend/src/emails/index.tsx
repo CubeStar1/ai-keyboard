@@ -18,7 +18,7 @@ interface StocksEmailProps {
 export default function SupaAuthVerifyEmail({
   verificationCode = "596853",
 }: StocksEmailProps) {
-  const appName = process.env.NEXT_PUBLIC_APP_NAME || "AI Keyboard";
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || "Tabby";
   return (
     <Html>
       <Head />

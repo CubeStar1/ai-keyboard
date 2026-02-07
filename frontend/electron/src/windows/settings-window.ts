@@ -28,7 +28,6 @@ export const createSettingsWindow = (initialRoute: string = "/settings"): Browse
     y,
     frame: true,
     autoHideMenuBar: true,
-    title: "AI Keyboard",
     resizable: true,
     webPreferences: {
       preload: join(__dirname, "preload.js"),

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
+const appName = process.env.NEXT_PUBLIC_APP_NAME!;
+
 export const metadata: Metadata = {
-  title: "Sign In - AI Keyboard",
-  description: "Sign in to AI Keyboard Assistant",
+  title: `Sign In - ${appName}`,
+  description: `Sign in to ${appName}`,
 };
 
 export default function AuthLayout({

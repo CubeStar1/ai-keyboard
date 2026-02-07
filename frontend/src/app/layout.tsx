@@ -9,9 +9,11 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
+const appName = process.env.NEXT_PUBLIC_APP_NAME!;
+
 export const metadata: Metadata = {
-  title: "AI Keyboard Assistant",
-  description: "AI-powered Keyboard Assistant",
+  title: `${appName} - AI Keyboard Assistant`,
+  description: `${appName} - AI Keyboard Assistant`,
 };
 
 export default function RootLayout({
