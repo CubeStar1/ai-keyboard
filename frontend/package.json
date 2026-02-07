@@ -1,9 +1,13 @@
 {
-  "name": "ai-keyboard",
-  "version": "2.0.0",
+  "name": "tabby",
+  "version": "0.1.0",
   "private": true,
   "main": "build/main.js",
   "description": "AI Keyboard",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CubeStar1/ai-keyboard.git"
+  },
   "scripts": {
     "build": "run-s next:build electron:build",
     "dev": "npm-run-all --parallel electron:dev next:dev",
@@ -22,7 +26,8 @@
     "postinstall": "electron-builder install-app-deps",
     "windows-mcp": "uvx windows-mcp --transport streamable-http --port 8001",
     "leetcode-mcp": "npx -y @jinzcdev/leetcode-mcp-server --site global",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "release": "git tag v$(node -p \"require('./package.json').version\") && git push origin --tags"
   },
   "dependencies": {
     "@ai-sdk/cerebras": "^2.0.5",
@@ -132,6 +137,13 @@
     "productName": "Tabby",
     "executableName": "Tabby",
     "appId": "com.tabby.ai-keyboard",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CubeStar1",
+        "repo": "ai-keyboard"
+      }
+    ],
     "icon": "public/icons/icon.png",
     "asarUnpack": [
       "public",
