@@ -38,25 +38,6 @@ export function AboutTab() {
           Your intelligent writing assistant. Enhance your workflow with AI-powered text transformations, coding interview assistance, and persistent memory.
         </p>
 
-        {/* Divider */}
-        <div className="w-16 h-px bg-zinc-200 dark:bg-zinc-800 mx-auto" />
-
-        {/* Features */}
-        <div className="grid grid-cols-3 gap-6 text-center pt-2">
-          <div className="space-y-1">
-            <p className="text-2xl font-serif text-foreground">∞</p>
-            <p className="text-xs text-muted-foreground">AI Actions</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-serif text-foreground">⌘</p>
-            <p className="text-xs text-muted-foreground">Shortcuts</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-serif text-foreground">◎</p>
-            <p className="text-xs text-muted-foreground">Memory</p>
-          </div>
-        </div>
-
         {/* Footer */}
         <div className="pt-8 space-y-2">
           <p className="text-xs text-muted-foreground">

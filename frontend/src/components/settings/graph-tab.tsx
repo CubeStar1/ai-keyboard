@@ -5,9 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import type { Node, Relationship, HitTargets } from "@neo4j-nvl/base";
 import type { MouseEventCallbacks } from "@neo4j-nvl/react";
-import { Brain, RefreshCw, AlertCircle } from "lucide-react";
+import { Brain, RefreshCw, AlertCircle, Share2, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useUser from "@/hooks/use-user";
+import { cn } from "@/lib/utils";
 
 const InteractiveNvlWrapper = dynamic(
   () => import("@neo4j-nvl/react").then((mod) => mod.InteractiveNvlWrapper),
@@ -50,8 +51,15 @@ function formatLabel(label: string): string {
     .join(" ");
 }
 
+// Sophisticated, muted palette for nodes
 const NODE_COLORS = [
-  "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#6366f1"
+  "#a78bfa", // violet-400
+  "#22d3ee", // cyan-400
+  "#34d399", // emerald-400
+  "#fbbf24", // amber-400
+  "#f87171", // red-400
+  "#f472b6", // pink-400
+  "#818cf8"  // indigo-400
 ];
 
 export function GraphTab() {
@@ -81,9 +89,10 @@ export function GraphTab() {
       const angle = (2 * Math.PI * index) / nodeArray.length;
       return {
         id,
-        size: id.startsWith("user_id:") ? 35 : 25,
+        size: id.startsWith("user_id:") ? 40 : 25,
         color: NODE_COLORS[index % NODE_COLORS.length],
         caption: formatLabel(id),
+        captions: [{ value: formatLabel(id), styles: ['bold'] }],
         x: centerX + radius * Math.cos(angle),
         y: centerY + radius * Math.sin(angle),
       };
@@ -94,6 +103,8 @@ export function GraphTab() {
       from: r.source,
       to: r.target,
       caption: r.relationship,
+      width: 1.5,
+      color: "#52525b" // zinc-600
     }));
 
     return { nodes, rels };
@@ -124,59 +135,90 @@ export function GraphTab() {
     onZoom: (zoom: number, evt: MouseEvent) => {},
   };
 
+  const handleZoomIn = () => {
+      if (nvlRef.current) {
+          const currentZoom = nvlRef.current.getScale(); 
+          nvlRef.current.setZoom(currentZoom * 1.2); 
+      }
+  };
+
+  const handleZoomOut = () => {
+    if (nvlRef.current) {
+        const currentZoom = nvlRef.current.getScale();
+        nvlRef.current.setZoom(currentZoom * 0.8);
+    }
+  };
+  
+  const handleFit = () => {
+    nvlRef.current?.fit();
+  }
+
+  // Loading State
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center text-muted-foreground">
-        <RefreshCw className="w-5 h-5 animate-spin mr-2" />
-        Loading graph...
-      </div>
+        <div className="flex flex-col items-center justify-center h-full bg-zinc-50/50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800">
+             <RefreshCw className="w-6 h-6 animate-spin text-zinc-400 mb-2" />
+             <p className="text-sm text-muted-foreground">Generating Neural Map...</p>
+        </div>
     );
   }
 
+  // Error State
   if (error) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-4">
-        <div className="flex items-center gap-2 text-red-500">
+      <div className="h-full flex flex-col items-center justify-center gap-4 bg-zinc-50/50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2 text-red-500 bg-red-50 dark:bg-red-950/20 px-4 py-3 rounded-lg border border-red-100 dark:border-red-900/30">
           <AlertCircle className="w-5 h-5" />
-          Failed to load graph data
+          <span className="text-sm font-medium">Unable to visualize knowledge graph</span>
         </div>
         <Button onClick={() => refetch()} variant="outline" size="sm">
-          Retry
+          Retry Connection
         </Button>
       </div>
     );
   }
 
+  // Empty State
   if (nodes.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
-        <Brain className="w-12 h-12 opacity-30" />
-        <p className="text-sm">No graph relationships yet</p>
-        <p className="text-xs">Graph relationships will appear as you add memories</p>
+      <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800">
+        <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-2 ring-1 ring-zinc-200 dark:ring-zinc-700/50">
+            <Share2 className="w-6 h-6 text-zinc-400" />
+        </div>
+        <h3 className="text-base font-semibold text-foreground">Graph Empty</h3>
+        <p className="text-sm">Knowledge relationships will appear here as you interact.</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-            <Brain className="w-5 h-5 text-cyan-500" />
-          </div>
-          <div>
-            <h2 className="font-semibold text-base">Knowledge Graph</h2>
-            <p className="text-xs text-muted-foreground">
-              {nodes.length} nodes · {rels.length} relationships
-            </p>
-          </div>
+    <div className="h-full flex flex-col relative overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-950">
+      {/* Floating Header */}
+      <div className="absolute top-4 left-4 z-10">
+        <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 shadow-lg">
+           <div className="flex items-center gap-2 mb-1">
+             <Brain className="w-4 h-4 text-violet-500" />
+             <h2 className="font-semibold text-sm">Knowledge Graph</h2>
+           </div>
+           <p className="text-[10px] text-muted-foreground font-mono">
+             {nodes.length} ENTITIES • {rels.length} CONNECTIONS
+           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => refetch()} className="gap-1.5">
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </Button>
       </div>
-      <div className="flex-1 bg-zinc-950">
+
+      {/* Floating Controls */}
+      <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
+         <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 rounded-lg p-1 shadow-lg flex flex-col gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={handleFit} title="Fit to Screen">
+                <Maximize2 className="w-4 h-4" />
+            </Button>
+             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => refetch()} title="Refresh Data">
+                <RefreshCw className="w-4 h-4" />
+            </Button>
+         </div>
+      </div>
+
+      <div className="flex-1 w-full h-full">
         <InteractiveNvlWrapper
           ref={nvlRef}
           nodes={nodes}
