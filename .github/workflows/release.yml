@@ -31,6 +31,16 @@ jobs:
           cd frontend
           pnpm install
 
+      - name: Create .env file
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> frontend/.env
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> frontend/.env
+          echo "SUPABASE_ADMIN=${{ secrets.SUPABASE_ADMIN }}" >> frontend/.env
+          echo "NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}" >> frontend/.env
+          echo "NEXT_PUBLIC_APP_ICON=${{ secrets.NEXT_PUBLIC_APP_ICON }}" >> frontend/.env
+          echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> frontend/.env
+          echo "NEXT_PUBLIC_MEMORY_API_URL=${{ secrets.NEXT_PUBLIC_MEMORY_API_URL }}" >> frontend/.env
+
       - name: Build and Publish
         run: |
           cd frontend
