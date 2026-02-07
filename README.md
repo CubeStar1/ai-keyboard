@@ -84,6 +84,11 @@ AI Keyboard is a **system-wide AI assistant** that lives at the point of input. 
 | Desktop Automation | nut-js, node-window-manager, Windows MCP   |
 | Database           | Supabase (PostgreSQL)                      |
 
+### Live Services
+
+- **Next.js Backend:** [tabby-api-psi.vercel.app](https://tabby-api-psi.vercel.app)
+- **Python Memory Backend:** [tabby-backend.azurecontainerapps.io](https://tabby-backend.jollydesert-22a4756c.centralindia.azurecontainerapps.io)
+
 ## Setup & Installation
 
 ### Prerequisites
@@ -157,10 +162,9 @@ cp backend/env.example backend/.env
 ```env
 NEXT_PUBLIC_SUPABASE_URL=""
 NEXT_PUBLIC_SUPABASE_ANON_KEY=""
-SUPABASE_ADMIN=""
 
-NEXT_PUBLIC_APP_NAME="AI Keyboard"
-NEXT_PUBLIC_APP_ICON="/ai-kb-logo.png"
+NEXT_PUBLIC_APP_NAME="Tabby"
+NEXT_PUBLIC_APP_ICON="/logos/tabby-logo.png"
 
 NEXT_PUBLIC_API_URL="http://localhost:3001"
 NEXT_PUBLIC_MEMORY_API_URL="http://localhost:8000"
@@ -184,6 +188,8 @@ CEREBRAS_API_KEY=""
 OPENROUTER_API_KEY=""
 
 TAVILY_API_KEY=""
+
+MEMORY_API_URL="http://localhost:8000"
 ```
 
 **Backend** (`backend/.env`):
@@ -249,9 +255,9 @@ npm run dist
 
 The resulting `.exe` will be in `frontend/dist`.
 
-### GitHub Releases
+### GitHub App Releases
 
-Automated releases are set up using GitHub Actions.
+Automated Windows app releases are set up using GitHub Actions.
 
 1. **GitHub Secrets**: Add these secrets to your repository settings:
    - `GH_TOKEN`: Your GitHub Personal Access Token (classic) with `repo` scope.
@@ -266,6 +272,25 @@ Automated releases are set up using GitHub Actions.
 - Create a Git tag (e.g., `v0.1.0`).
 - Push the tag to GitHub.
 - Trigger a GitHub Action to build the Windows `.exe` and create a GitHub Release.
+
+### Python Backend Deployment (Azure)
+
+The Python backend is deployed to **Azure Container Apps** with a fully automated CI/CD pipeline.
+
+- **Workflow:** `.github/workflows/backend-deploy.yml`
+- **Trigger:** Any push to the `backend/` directory on the `main` branch.
+- **Project URL:** [tabby-backend.azurecontainerapps.io](https://tabby-backend.jollydesert-22a4756c.centralindia.azurecontainerapps.io)
+- **Process:**
+  1. Builds a Docker image.
+  2. Pushes the image to Docker Hub (`thecubestar/tabby-backend`).
+  3. Updates the Azure Container App with the new image tag.
+
+### Next.js Backend Deployment (Vercel)
+
+The shared API backend (`nextjs-backend/`) is deployed to **Vercel**
+
+- **Deployment:** Automatic from the `main` branch.
+- **Project URL:** [tabby-api-psi.vercel.app](https://tabby-api-psi.vercel.app)
 
 ## Project Structure
 
