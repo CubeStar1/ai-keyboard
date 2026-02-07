@@ -139,7 +139,7 @@ export default function OnboardingPage() {
       setCookie("onboarding_complete", "true");
 
       // Redirect to settings page
-      router.push("/settings");
+      router.push("/");
       router.refresh(); // Refresh to ensure middleware picks up new cookie
     } catch (error) {
       console.error("Failed to save onboarding data:", error);

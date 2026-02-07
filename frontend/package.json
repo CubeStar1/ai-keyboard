@@ -141,9 +141,13 @@
       {
         "provider": "github",
         "owner": "CubeStar1",
-        "repo": "ai-keyboard"
+        "repo": "ai-keyboard",
+        "releaseType": "draft"
       }
     ],
+    "releaseInfo": {
+      "releaseName": "v${version}"
+    },
     "icon": "public/icons/icon.png",
     "asarUnpack": [
       "public",
