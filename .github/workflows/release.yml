@@ -39,7 +39,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_ADMIN: ${{ secrets.SUPABASE_ADMIN }}
           NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
           NEXT_PUBLIC_APP_ICON: ${{ secrets.NEXT_PUBLIC_APP_ICON }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}

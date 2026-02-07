@@ -95,6 +95,16 @@ export function Hero() {
 
             <li className="w-full">
               <SlideUpLink
+                href="/api/download"
+                label="Download for Windows"
+                variant="secondary"
+                size="md"
+                rotateText
+              />
+            </li>
+
+            <li className="w-full">
+              <SlideUpLink
                 href="/docs"
                 label="View Features"
                 variant="secondary"
