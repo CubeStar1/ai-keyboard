@@ -24,9 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 supabase_connection_string = os.environ.get("SUPABASE_CONNECTION_STRING")
-neo4j_url = os.environ.get("NEO4J_URL")
-neo4j_username = os.environ.get("NEO4J_USERNAME", "neo4j")
-neo4j_password = os.environ.get("NEO4J_PASSWORD")
+# neo4j_url = os.environ.get("NEO4J_URL")
+# neo4j_username = os.environ.get("NEO4J_USERNAME", "neo4j")
+# neo4j_password = os.environ.get("NEO4J_PASSWORD")
 
 
 # if not supabase_connection_string:
@@ -57,15 +57,15 @@ config = {
     }
 }
 
-if neo4j_url and neo4j_password:
-    config["graph_store"] = {
-        "provider": "neo4j",
-        "config": {
-            "url": neo4j_url,
-            "username": neo4j_username,
-            "password": neo4j_password,
-        }
-    }
+# if neo4j_url and neo4j_password:
+#     config["graph_store"] = {
+#         "provider": "neo4j",
+#         "config": {
+#             "url": neo4j_url,
+#             "username": neo4j_username,
+#             "password": neo4j_password,
+#         }
+#     }
 
 print("=" * 50)
 print("MEM0 CONFIGURATION:")

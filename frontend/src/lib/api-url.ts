@@ -9,8 +9,11 @@
  * @returns Full URL to the API endpoint
  */
 export function getApiUrl(path: string): string {
+  // Prefer the environment variable, fallback to localhost for development
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  return `${baseUrl}${path}`;
+  // Remove trailing slash if present to avoid double slashes
+  const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+  return `${cleanBaseUrl}${path}`;
 }
 
 /**
@@ -19,6 +22,9 @@ export function getApiUrl(path: string): string {
  * @returns Full URL to the Memory API endpoint
  */
 export function getMemoryApiUrl(path: string): string {
+  // Prefer the environment variable, fallback to localhost for development
   const baseUrl = process.env.NEXT_PUBLIC_MEMORY_API_URL || 'http://localhost:8000';
-  return `${baseUrl}${path}`;
+  // Remove trailing slash if present to avoid double slashes
+  const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+  return `${cleanBaseUrl}${path}`;
 }
