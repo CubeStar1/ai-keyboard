@@ -112,12 +112,6 @@ export function Header({ config }: HeaderProps) {
 
               <div className="flex items-center gap-3">
                 {/* <GithubStarButton /> */}
-                <Link
-                  href="/signin"
-                  className="hidden md:inline-flex items-center justify-center px-6 py-2 text-sm font-semibold bg-white text-black hover:bg-white/90 rounded-full transition-all duration-200 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95"
-                >
-                  Sign In
-                </Link>
                 <div className="md:hidden">
                   <NavigationMobile navigationLinks={config.navigationLinks} />
                 </div>

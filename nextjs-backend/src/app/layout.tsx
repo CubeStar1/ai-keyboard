@@ -1,9 +1,9 @@
 import { Metadata } from 'next'
-import { Header } from '@/components/global/header'
-import { headerConfig } from '@/lib/config/header'
-import { Footer } from '@/components/revamp/footer'
 import "./globals.css";
 import { Inter, Outfit } from 'next/font/google'
+import { ThemeProvider } from '@/components/theme-provider'
+import { QueryProvider } from '@/components/query-provider'
+import { Toaster } from '@/components/ui/sonner'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -21,16 +21,24 @@ export const metadata: Metadata = {
     'Tabby',
 }
 
-export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} ${outfit.variable}`}>
-    <div className="dark bg-black text-white" data-theme="dark">
-      <Header config={headerConfig} />
-      {children}
-      <Footer />
-    </div>
-    </body>
+        <QueryProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="min-h-screen bg-background text-foreground antialiased">
+              {children}
+            </div>
+            <Toaster />
+          </ThemeProvider>
+        </QueryProvider>
+      </body>
     </html>
   )
 }

@@ -85,8 +85,8 @@ export function Hero() {
           >
             <li className="w-full">
               <SlideUpLink
-                href="/dashboard"
-                label="Get Started"
+                href="/register"
+                label="Join Early Access"
                 variant="primary"
                 size="md"
                 rotateText
@@ -97,16 +97,6 @@ export function Hero() {
               <SlideUpLink
                 href="/api/download"
                 label="Download for Windows"
-                variant="secondary"
-                size="md"
-                rotateText
-              />
-            </li>
-
-            <li className="w-full">
-              <SlideUpLink
-                href="/docs"
-                label="View Features"
                 variant="secondary"
                 size="md"
                 rotateText

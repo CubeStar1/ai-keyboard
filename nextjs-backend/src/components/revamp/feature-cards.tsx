@@ -16,13 +16,10 @@ import React, { MouseEvent } from 'react'
 import { BackgroundGrid } from './background-grid'
 import { Gutter } from './gutter'
 
-import Image from 'next/image'
-
 interface FeatureCard {
   title: string
   description: string
   icon: React.ReactNode
-  image?: string
 }
 
 const features: FeatureCard[] = [
@@ -30,49 +27,41 @@ const features: FeatureCard[] = [
     title: 'Interview Copilot',
     description: 'Screen capture, problem analysis, and real-time code suggestions for technical interviews.',
     icon: <Monitor className="h-6 w-6" />,
-    image: '/landing/tabby-interview-copilot.png'
   },
   {
     title: 'Action Menu',
     description: 'Quick AI actions: fix grammar, change tone, expand text, and run custom snippets.',
     icon: <Keyboard className="h-6 w-6" />,
-    image: '/landing/tabby-actions.png'
   },
   {
     title: 'Persistent Memory',
     description: 'Long-term context retention using vector databases. Your AI remembers everything.',
     icon: <Brain className="h-6 w-6" />,
-    image: '/landing/tabby-memories.png'
   },
   {
     title: 'Ghost Text',
     description: 'Subtle IDE suggestions that appear as you type, guiding you through complex code.',
     icon: <Zap className="h-6 w-6" />,
-    image: '/landing/tabby-interview-ghost.png'
   },
   {
     title: 'Knowledge Graph',
     description: 'Visualize your cognitive architecture. Discover connections between snippets and past sessions.',
     icon: <Eye className="h-6 w-6" />,
-    image: '/landing/tabby-kg.png'
   },
   {
     title: 'Voice Agent',
     description: 'Voice-to-text and text-to-voice for hands-free, natural AI interaction.',
     icon: <Mic className="h-6 w-6" />,
-    image: '/landing/tabbyb-voice-agent.png'
   },
   {
     title: 'Intelligent Chat',
     description: 'Full context-aware conversation with tool integration and memory search.',
     icon: <MessageSquare className="h-6 w-6" />,
-    image: '/images/tabby-chat.png'
   },
   {
     title: 'Invisible Typing',
     description: 'Seamless AI-assisted typing. Tabby types directly into any app with human rhythm.',
     icon: <Sparkles className="h-6 w-6" />,
-    image: '/landing/tabby-word-ghost.png'
   },
 ]
 
@@ -108,17 +97,6 @@ function SpotlightCard({ feature, index }: { feature: FeatureCard; index: number
         }}
       />
       <div className="relative flex h-full flex-col p-8">
-        {feature.image && (
-          <div className="mb-8 overflow-hidden rounded-lg border border-white/10 bg-black/20">
-            <Image
-              src={feature.image}
-              alt={feature.title}
-              width={800}
-              height={500}
-              className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
-            />
-          </div>
-        )}
         <div className="mb-6 inline-flex w-fit rounded-none bg-white/5 p-3 ring-1 ring-white/10 text-neutral-200">
           {feature.icon}
         </div>

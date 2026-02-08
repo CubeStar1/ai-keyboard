@@ -24,17 +24,15 @@ const footerColumns: FooterColumn[] = [
     label: 'Product',
     links: [
       { label: 'Features', href: '/#features' },
-      { label: 'Dashboard', href: '/dashboard' },
-      { label: 'Analytics', href: '/analytics' },
     ],
   },
-  {
-    label: 'Resources',
-    links: [
-      { label: 'Preferences', href: '/preferences' },
-      { label: 'Sign In', href: '/signin' },
-    ],
-  },
+  // {
+  //   label: 'Resources',
+  //   links: [
+  //     { label: 'Preferences', href: '/preferences' },
+  //     { label: 'Sign In', href: '/signin' },
+  //   ],
+  // },
   // {
   //   label: 'Platform',
   //   links: [

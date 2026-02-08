@@ -24,14 +24,6 @@ export const headerConfig: HeaderConfig = {
     {
       href: "/#features",
       label: "Features"
-    },
-    {
-      href: "/dashboard",
-      label: "Dashboard"
-    },
-    {
-      href: "/analytics",
-      label: "Analytics"
     }
-  ]
+  ] 
 }
