@@ -49,7 +49,7 @@ function getAllowOriginValue(origin: string): string {
   return origin;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const origin = request.headers.get("origin") || "";
   const allowed = isAllowedOrigin(origin);
 

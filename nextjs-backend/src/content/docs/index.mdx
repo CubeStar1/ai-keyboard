@@ -1,0 +1,78 @@
+---
+title: Welcome to Tabby
+description: An intelligent keyboard layer that transforms your input device into a real-time AI collaborator.
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## What is Tabby?
+
+Tabby is a **system-wide AI assistant** that lives at the point of input. Instead of switching between apps for AI help, it provides seamless integration through global shortcuts, ghost text suggestions, and desktop automation.
+
+<Callout type="info">Tabby runs locally as a desktop application with Electron, connecting to powerful backend services for memory and AI processing.</Callout>
+
+![Tabby Interface](/landing/tabby-actions.png)
+
+## Key Features
+
+<Cards>
+  <Card
+    title="Interview Copilot"
+    href="/docs/features/interview-copilot"
+    description="Real-time coding interview assistance with screen capture and step-by-step walkthroughs."
+  />
+  <Card
+    title="Action Menu"
+    href="/docs/features/action-menu"
+    description="Quick AI actions on selected text: fix grammar, change tone, summarize, and more."
+  />
+  <Card
+    title="AI Suggestions"
+    href="/docs/features/suggestions"
+    description="Context-aware ghost text completions as you type, integrated system-wide."
+  />
+  <Card
+    title="Persistent Memory"
+    href="/docs/features/brain-memory"
+    description="Remembers your preferences and past interactions using a Neo4j knowledge graph."
+  />
+</Cards>
+
+## Quick Start
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+
+<Steps>
+  <Step>
+    ### Install Prerequisites
+    Ensure you have Node.js, Python 3.12+, and pnpm installed on your system.
+  </Step>
+  <Step>
+    ### Clone & Setup
+    Follow the [Installation Guide](/docs/getting-started/installation) to clone the repo and set up environment variables.
+  </Step>
+  <Step>
+    ### Launch Backend Services
+    Start the Next.js API, Memory Backend, and Windows MCP server.
+  </Step>
+  <Step>
+    ### Start the Desktop App
+    Run the Electron application and look for the Tabby icon in your system tray.
+  </Step>
+</Steps>
+
+## Deep Dive
+
+<Cards>
+  <Card
+    title="Architecture"
+    href="/docs/architecture"
+    description="Understand how the Electron app, Next.js backend, and Python memory layer interact."
+  />
+  <Card
+    title="Keyboard Shortcuts"
+    href="/docs/shortcuts"
+    description="Master the global hotkeys for maximum productivity."
+  />
+</Cards>
