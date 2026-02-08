@@ -135,16 +135,16 @@ export function Hero() {
         </div>
 
         <motion.div
-          className="lg:hidden mt-12 mb-12"
+          className="lg:hidden mt-8 mb-4 px-4"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
         >
-          <div className="rounded-lg border border-white/5 bg-white/5 p-1 backdrop-blur-sm">
+          <div className="rounded-lg border border-white/5 bg-white/5 p-1 backdrop-blur-sm shadow-2xl">
             <div className="rounded overflow-hidden bg-[#141414] border border-white/5 shadow-sm">
               <Image
-                src="/landing/tabby-dashboard.png"
-                alt="Tabby Dashboard"
+                src="/landing/tabby-interview-ghost.png"
+                alt="Tabby Interview Copilot"
                 width={1200}
                 height={800}
                 className="w-full h-auto"
