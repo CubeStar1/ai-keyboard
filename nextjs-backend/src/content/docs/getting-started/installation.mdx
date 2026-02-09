@@ -8,7 +8,6 @@ import { Steps, Step } from 'fumadocs-ui/components/steps'
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
-
 - **Node.js 18+**
 - **Python 3.12+**
 - **pnpm** (Package Manager)
@@ -18,23 +17,39 @@ Before you begin, ensure you have the following installed:
 
 <Steps>
   <Step>
-    ### Clone the Repository ```bash git clone https://github.com/CubeStar1/ai-keyboard.git cd
-    ai-keyboard ```
+    ### Clone the Repository
+    ```bash
+    git clone https://github.com/CubeStar1/ai-keyboard.git
+    cd ai-keyboard
+    ```
   </Step>
   <Step>
-    ### Install Dependencies Install dependencies for all three layers: ```bash # Frontend
-    (Electron) cd frontend && pnpm install # Next.js Backend cd ../nextjs-backend && pnpm install #
-    Memory Backend (Python) cd ../backend && uv sync ```
+    ### Install Dependencies
+    Install dependencies for all three layers:
+    ```bash
+    # Frontend (Electron)
+    cd frontend && pnpm install
+    
+    # Next.js Backend
+    cd ../nextjs-backend && pnpm install
+    
+    # Memory Backend (Python)
+    cd ../backend && uv sync
+    ```
   </Step>
   <Step>
-    ### Configure Environment Variables Copy the example environment files and fill in your API keys
-    (OpenAI, Supabase, Neo4j, etc.). ```bash cp frontend/env.example frontend/.env.local cp
-    nextjs-backend/env.example nextjs-backend/.env cp backend/env.example backend/.env ```
+    ### Configure Environment Variables
+    Copy the example environment files and fill in your API keys (OpenAI, Supabase, Neo4j, etc.).
+    ```bash
+    cp frontend/env.example frontend/.env.local
+    cp nextjs-backend/env.example nextjs-backend/.env
+    cp backend/env.example backend/.env
+    ```
   </Step>
   <Step>
-    ### Database Setup - **Supabase**: Run the schema from
-    `frontend/src/lib/supabase/migrations/schema.sql` in your Supabase SQL editor. - **Neo4j**: Set
-    up a free AuraDB instance and save the credentials.
+    ### Database Setup
+    - **Supabase**: Run the schema from `frontend/src/lib/supabase/migrations/schema.sql` in your Supabase SQL editor.
+    - **Neo4j**: Set up a free AuraDB instance and save the credentials.
   </Step>
 </Steps>
 

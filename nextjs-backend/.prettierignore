@@ -5,5 +5,7 @@ build
 node_modules
 .source
 
-.mdx
-.md
+# Ignore content docs to prevent formatting issues
+src/content/docs/
+*.mdx
+*.md
