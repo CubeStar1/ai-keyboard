@@ -1,6 +1,7 @@
 {
   "title": "Getting Started",
   "pages": [
-    "installation"
+    "hosted-service",
+    "local-installation"
   ]
 }
