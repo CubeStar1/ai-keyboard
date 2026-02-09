@@ -21,17 +21,20 @@ const steps: Step[] = [
   {
     number: '02',
     title: 'Learn the Shortcuts',
-    description: 'Master Ctrl+\\ for actions, Alt+X for interview mode, and Ctrl+Space for suggestions.',
+    description:
+      'Master Ctrl+\\ for actions, Alt+X for interview mode, and Ctrl+Space for suggestions.',
   },
   {
     number: '03',
     title: 'Start Coding',
-    description: 'Use the Interview Copilot for real-time assistance or Ghost Text for autocomplete.',
+    description:
+      'Use the Interview Copilot for real-time assistance or Ghost Text for autocomplete.',
   },
   {
     number: '04',
     title: 'Build Your Memory',
-    description: 'Let Tabby learn your preferences and coding style over time for personalized help.',
+    description:
+      'Let Tabby learn your preferences and coding style over time for personalized help.',
   },
 ]
 

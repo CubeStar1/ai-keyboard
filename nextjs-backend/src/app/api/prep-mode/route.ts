@@ -6,49 +6,62 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
-} from "ai";
-import { myProvider, getMCPTools } from "@/lib/ai";
-import { defaultModel } from "@/lib/ai/models";
-import { z } from "zod";
-import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from "@/lib/ai/tools/memory";
-import { generateUUID } from "@/lib/utils/generate-uuid";
-import {
-  saveChat,
-  saveMessages,
-  getChatById,
-  generateTitleFromUserMessage,
-} from "@/actions/chat";
-import { getAuthenticatedUserId } from "@/lib/supabase/auth";
+} from 'ai'
+import { myProvider, getMCPTools } from '@/lib/ai'
+import { defaultModel } from '@/lib/ai/models'
+import { z } from 'zod'
+import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from '@/lib/ai/tools/memory'
+import { generateUUID } from '@/lib/utils/generate-uuid'
+import { saveChat, saveMessages, getChatById, generateTitleFromUserMessage } from '@/actions/chat'
+import { getAuthenticatedUserId } from '@/lib/supabase/auth'
 
 const prepSchema = z.object({
-  pattern: z.string().describe("Algorithm pattern: Sliding Window, Two Pointer, DP, BFS/DFS, Backtracking, etc."),
-  difficulty: z.string().describe("Easy, Medium, or Hard"),
-  hints: z.array(z.object({
-    level: z.number().min(1).max(5),
-    content: z.string()
-  })).describe("5 progressive hints from gentle nudge to near-solution"),
-  similar: z.array(z.object({
-    name: z.string(),
-    slug: z.string(),
-    reason: z.string()
-  })).describe("Similar LeetCode problems that use the same pattern"),
-  mistakes: z.array(z.object({
-    mistake: z.string(),
-    correction: z.string(),
-    pattern: z.string()
-  })).describe("Common mistakes for this problem type based on user history"),
+  pattern: z
+    .string()
+    .describe('Algorithm pattern: Sliding Window, Two Pointer, DP, BFS/DFS, Backtracking, etc.'),
+  difficulty: z.string().describe('Easy, Medium, or Hard'),
+  hints: z
+    .array(
+      z.object({
+        level: z.number().min(1).max(5),
+        content: z.string(),
+      })
+    )
+    .describe('5 progressive hints from gentle nudge to near-solution'),
+  similar: z
+    .array(
+      z.object({
+        name: z.string(),
+        slug: z.string(),
+        reason: z.string(),
+      })
+    )
+    .describe('Similar LeetCode problems that use the same pattern'),
+  mistakes: z
+    .array(
+      z.object({
+        mistake: z.string(),
+        correction: z.string(),
+        pattern: z.string(),
+      })
+    )
+    .describe('Common mistakes for this problem type based on user history'),
   solution: z.string().describe("Clean, well-commented solution code in user's preferred language"),
   complexity: z.object({
     time: z.string(),
-    space: z.string()
+    space: z.string(),
   }),
-  memories: z.array(z.object({
-    memory: z.string(),
-    createdAt: z.string()
-  }))
-});
+  memories: z.array(
+    z.object({
+      memory: z.string(),
+      createdAt: z.string(),
+    })
+  ),
+})
 
-const getSystemPrompt = (userId: string) => `You are an expert LeetCode Practice Coach and Pair Programmer helping users learn and improve their coding skills.
+const getSystemPrompt = (
+  userId: string
+) => `You are an expert LeetCode Practice Coach and Pair Programmer helping users learn and improve their coding skills.
 
 ## YOUR MISSION
 Analyze the coding problem from the user's screen and provide structured learning assistance. Focus on TEACHING, not just solving. You can also help users write code, open LeetCode problems, and guide them through the coding process.
@@ -178,51 +191,51 @@ Include relevant memories you retrieved about the user.
 6. Check for past mistakes on this pattern
 7. Provide solution in preferred language
 8. Use Windows MCP tools to help the user (open problems, type code, run tests)
-9. Store any new insights about the user`;
+9. Store any new insights about the user`
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  const body = await req.json()
   const { messages, conversationId, screenshot, hintLevel } = body as {
-    messages: UIMessage[];
-    conversationId?: string;
-    screenshot?: string;
-    hintLevel?: number;
-  };
+    messages: UIMessage[]
+    conversationId?: string
+    screenshot?: string
+    hintLevel?: number
+  }
 
   if (!messages || !Array.isArray(messages)) {
-    return new Response("Missing messages", { status: 400 });
+    return new Response('Missing messages', { status: 400 })
   }
 
-  const userId = await getAuthenticatedUserId(req);
+  const userId = await getAuthenticatedUserId(req)
 
   if (!userId) {
-    return new Response("Unauthorized", { status: 401 });
+    return new Response('Unauthorized', { status: 401 })
   }
 
-  const userMessage = messages[messages.length - 1];
+  const userMessage = messages[messages.length - 1]
 
   if (conversationId && userMessage) {
-    const existingChat = await getChatById(conversationId);
+    const existingChat = await getChatById(conversationId)
     if (!existingChat) {
-      const title = await generateTitleFromUserMessage(userMessage, defaultModel);
-      await saveChat({ id: conversationId, title, type: "prep", userId });
+      const title = await generateTitleFromUserMessage(userMessage, defaultModel)
+      await saveChat({ id: conversationId, title, type: 'prep', userId })
     }
-    await saveMessages([userMessage], conversationId);
+    await saveMessages([userMessage], conversationId)
   }
 
-  const mcpTools = await getMCPTools();
-  const modelMessages = await convertToModelMessages(messages);
+  const mcpTools = await getMCPTools()
+  const modelMessages = await convertToModelMessages(messages)
 
   if (screenshot) {
-    const lastMsg = modelMessages[modelMessages.length - 1];
-    if (lastMsg && lastMsg.role === "user") {
-      if (typeof lastMsg.content === "string") {
+    const lastMsg = modelMessages[modelMessages.length - 1]
+    if (lastMsg && lastMsg.role === 'user') {
+      if (typeof lastMsg.content === 'string') {
         lastMsg.content = [
-          { type: "text", text: lastMsg.content },
-          { type: "image", image: screenshot },
-        ];
+          { type: 'text', text: lastMsg.content },
+          { type: 'image', image: screenshot },
+        ]
       } else if (Array.isArray(lastMsg.content)) {
-        lastMsg.content.push({ type: "image", image: screenshot });
+        lastMsg.content.push({ type: 'image', image: screenshot })
       }
     }
   }
@@ -245,41 +258,40 @@ export async function POST(req: Request) {
         }),
         stopWhen: stepCountIs(5),
         onError: (error) => {
-          console.error("Prep Mode stream error:", error);
+          console.error('Prep Mode stream error:', error)
         },
-      });
+      })
 
-      result.consumeStream();
+      result.consumeStream()
 
       dataStream.merge(
         result.toUIMessageStream({
           sendReasoning: true,
         })
-      );
+      )
     },
     onFinish: async ({ messages: generatedMessages }) => {
       if (conversationId && generatedMessages && generatedMessages.length > 0) {
-        const assistantMessages = generatedMessages.filter(m => m.role === "assistant");
+        const assistantMessages = generatedMessages.filter((m) => m.role === 'assistant')
         if (assistantMessages.length > 0) {
-          const messagesWithMetadata = assistantMessages.map(msg => {
-            const textPart = msg.parts?.find((p: { type: string }) => p.type === "text");
-            let analysis = null;
+          const messagesWithMetadata = assistantMessages.map((msg) => {
+            const textPart = msg.parts?.find((p: { type: string }) => p.type === 'text')
+            let analysis = null
             if (textPart && 'text' in textPart) {
               try {
-                analysis = JSON.parse(textPart.text);
-              } catch {
-              }
+                analysis = JSON.parse(textPart.text)
+              } catch {}
             }
             return {
               ...msg,
-              metadata: analysis ? { analysis, type: "prep" } : { type: "prep" },
-            };
-          });
-          await saveMessages(messagesWithMetadata as UIMessage[], conversationId);
+              metadata: analysis ? { analysis, type: 'prep' } : { type: 'prep' },
+            }
+          })
+          await saveMessages(messagesWithMetadata as UIMessage[], conversationId)
         }
       }
     },
-  });
+  })
 
-  return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+  return new Response(stream.pipeThrough(new JsonToSseTransformStream()))
 }

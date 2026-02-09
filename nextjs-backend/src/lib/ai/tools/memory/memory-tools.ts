@@ -1,13 +1,6 @@
 import { tool } from 'ai'
 import { z } from 'zod/v3'
-import {
-  addMemory,
-  searchMemory,
-  getAllMemories,
-  updateMemory,
-  deleteMemory,
-} from './client'
-
+import { addMemory, searchMemory, getAllMemories, updateMemory, deleteMemory } from './client'
 
 export const addMemoryTool = tool({
   description:
@@ -38,22 +31,19 @@ export const addMemoryTool = tool({
   },
 })
 
-
 export const searchMemoryTool = tool({
   description:
     'Search through stored memories to find relevant information about the user. Use memoryType filter to search specific categories: LONG_TERM (preferences, identity), SHORT_TERM (current tasks), EPISODIC (past events), SEMANTIC (knowledge), PROCEDURAL (how-to).',
   inputSchema: z.object({
     query: z.string().describe('The search query to find relevant memories.'),
     userId: z.string().describe('The unique identifier for the user.'),
-    limit: z
-      .number()
-      .optional()
-      .default(10)
-      .describe('Maximum number of memories to return.'),
+    limit: z.number().optional().default(10).describe('Maximum number of memories to return.'),
     memoryType: z
       .enum(['LONG_TERM', 'SHORT_TERM', 'EPISODIC', 'SEMANTIC', 'PROCEDURAL'])
       .optional()
-      .describe('Filter by memory type. LONG_TERM=preferences/identity, SHORT_TERM=current tasks, EPISODIC=past events, SEMANTIC=knowledge, PROCEDURAL=how-to.'),
+      .describe(
+        'Filter by memory type. LONG_TERM=preferences/identity, SHORT_TERM=current tasks, EPISODIC=past events, SEMANTIC=knowledge, PROCEDURAL=how-to.'
+      ),
   }),
   execute: async ({ query, userId, limit, memoryType }) => {
     try {
@@ -65,7 +55,6 @@ export const searchMemoryTool = tool({
     }
   },
 })
-
 
 export const getAllMemoriesTool = tool({
   description:
@@ -84,7 +73,6 @@ export const getAllMemoriesTool = tool({
   },
 })
 
-
 export const updateMemoryTool = tool({
   description:
     'Update an existing memory with new information. Use this to correct or enhance stored memories.',
@@ -102,7 +90,6 @@ export const updateMemoryTool = tool({
     }
   },
 })
-
 
 export const deleteMemoryTool = tool({
   description:

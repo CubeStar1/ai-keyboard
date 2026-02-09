@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import * as React from 'react'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Menu } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 interface NavigationMobileProps {
   navigationLinks: Array<{
@@ -35,10 +35,8 @@ export function NavigationMobile({ navigationLinks }: NavigationMobileProps) {
               href={item.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "text-sm transition-colors hover:text-primary",
-                pathname === item.href
-                  ? "text-primary font-medium"
-                  : "text-muted-foreground"
+                'text-sm transition-colors hover:text-primary',
+                pathname === item.href ? 'text-primary font-medium' : 'text-muted-foreground'
               )}
             >
               {item.label}

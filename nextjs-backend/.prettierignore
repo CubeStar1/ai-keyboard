@@ -1,0 +1,8 @@
+# Ignore artifacts:
+.next
+dist
+build
+node_modules
+
+.mdx
+.md

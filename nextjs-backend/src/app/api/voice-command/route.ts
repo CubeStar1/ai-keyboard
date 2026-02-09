@@ -1,8 +1,8 @@
-import { experimental_transcribe as transcribe, generateText, stepCountIs } from "ai";
-import { createGroq } from "@ai-sdk/groq";
-import { getMCPTools } from "@/lib/ai/mcp/mcp-client";
-import { myProvider } from "@/lib/ai/provider";
-import { defaultModel } from "@/lib/ai/models";
+import { experimental_transcribe as transcribe, generateText, stepCountIs } from 'ai'
+import { createGroq } from '@ai-sdk/groq'
+import { getMCPTools } from '@/lib/ai/mcp/mcp-client'
+import { myProvider } from '@/lib/ai/provider'
+import { defaultModel } from '@/lib/ai/models'
 
 const COMMAND_SYSTEM_PROMPT = `You are a desktop command executor. Parse the user's voice command and execute it using the appropriate MCP tools.
 
@@ -33,78 +33,77 @@ AVAILABLE ACTIONS:
 - Keyboard shortcuts: Shortcut-Tool
 - Wait for UI: Wait-Tool
 
-Execute all steps and respond with a brief confirmation.`;
-
+Execute all steps and respond with a brief confirmation.`
 
 async function parseAudioData(audio: string): Promise<Uint8Array> {
-  if (audio.startsWith("data:")) {
-    const [, base64Data] = audio.split(",");
-    const binaryString = atob(base64Data);
-    const audioData = new Uint8Array(binaryString.length);
+  if (audio.startsWith('data:')) {
+    const [, base64Data] = audio.split(',')
+    const binaryString = atob(base64Data)
+    const audioData = new Uint8Array(binaryString.length)
     for (let i = 0; i < binaryString.length; i++) {
-      audioData[i] = binaryString.charCodeAt(i);
+      audioData[i] = binaryString.charCodeAt(i)
     }
-    return audioData;
+    return audioData
   }
 
-  const binaryString = atob(audio);
-  const audioData = new Uint8Array(binaryString.length);
+  const binaryString = atob(audio)
+  const audioData = new Uint8Array(binaryString.length)
   for (let i = 0; i < binaryString.length; i++) {
-    audioData[i] = binaryString.charCodeAt(i);
+    audioData[i] = binaryString.charCodeAt(i)
   }
-  return audioData;
+  return audioData
 }
 
 export async function POST(req: Request) {
   try {
-    const { audio } = await req.json();
+    const { audio } = await req.json()
 
     if (!audio) {
-      return Response.json({ error: "No audio data provided" }, { status: 400 });
+      return Response.json({ error: 'No audio data provided' }, { status: 400 })
     }
 
-    const audioData = await parseAudioData(audio);
-    console.log("[VoiceCommand] Audio bytes:", audioData.length);
+    const audioData = await parseAudioData(audio)
+    console.log('[VoiceCommand] Audio bytes:', audioData.length)
 
-    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
     const transcription = await transcribe({
-      model: groq.transcription("whisper-large-v3"),
+      model: groq.transcription('whisper-large-v3'),
       audio: audioData,
-    });
+    })
 
-    console.log("[VoiceCommand] Transcription:", transcription.text);
+    console.log('[VoiceCommand] Transcription:', transcription.text)
 
     if (!transcription.text || transcription.text.length === 0) {
       return Response.json({
-        transcription: "",
-        action: "No command detected",
-        result: "",
-      });
+        transcription: '',
+        action: 'No command detected',
+        result: '',
+      })
     }
 
-    const mcpTools = await getMCPTools();
-    console.log("[VoiceCommand] MCP tools loaded:", Object.keys(mcpTools).length);
+    const mcpTools = await getMCPTools()
+    console.log('[VoiceCommand] MCP tools loaded:', Object.keys(mcpTools).length)
 
     const result = await generateText({
       model: myProvider.languageModel(defaultModel),
       system: COMMAND_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: transcription.text }],
+      messages: [{ role: 'user', content: transcription.text }],
       tools: mcpTools,
       stopWhen: stepCountIs(10),
-    });
+    })
 
-    console.log("[VoiceCommand] Result:", result.text);
+    console.log('[VoiceCommand] Result:', result.text)
 
     return Response.json({
       transcription: transcription.text,
-      action: "Command executed",
+      action: 'Command executed',
       result: result.text,
-    });
+    })
   } catch (error) {
-    console.error("Voice command error:", error);
+    console.error('Voice command error:', error)
     return Response.json(
-      { error: error instanceof Error ? error.message : "Voice command failed" },
+      { error: error instanceof Error ? error.message : 'Voice command failed' },
       { status: 500 }
-    );
+    )
   }
 }

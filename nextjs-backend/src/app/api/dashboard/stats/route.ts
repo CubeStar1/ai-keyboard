@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 
 // Mock statistics data - will be replaced with real data later
 export async function GET() {
@@ -15,7 +15,7 @@ export async function GET() {
     tokensChange: 15.4,
     memoriesStored: 342,
     memoriesChange: 28.1,
-  };
+  }
 
-  return NextResponse.json({ success: true, data: stats });
+  return NextResponse.json({ success: true, data: stats })
 }

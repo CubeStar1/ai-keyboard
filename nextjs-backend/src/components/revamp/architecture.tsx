@@ -23,7 +23,8 @@ export function Architecture() {
             System Architecture
           </h2>
           <p className="text-lg text-neutral-400">
-            A high-level overview of how Tabby integrates AI with your workflow across devices and platforms.
+            A high-level overview of how Tabby integrates AI with your workflow across devices and
+            platforms.
           </p>
         </motion.div>
 

@@ -25,7 +25,8 @@ const highlights: Highlight[] = [
   },
   {
     text: 'Action Menu',
-    description: 'Quick AI actions at your fingertips. Fix grammar, change tone, expand text, and run custom prompts.',
+    description:
+      'Quick AI actions at your fingertips. Fix grammar, change tone, expand text, and run custom prompts.',
     image: '/landing/tabby-actions.png',
   },
   {
@@ -66,7 +67,8 @@ const highlights: Highlight[] = [
   },
   {
     text: 'Knowledge Graph',
-    description: 'Neo4j-powered memory visualization. See connections between your ideas and context.',
+    description:
+      'Neo4j-powered memory visualization. See connections between your ideas and context.',
     image: '/landing/tabby-kg.png',
   },
   {

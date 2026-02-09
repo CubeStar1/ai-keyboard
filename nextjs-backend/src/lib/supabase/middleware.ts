@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { protectedPaths, authPaths } from '@/lib/constants'
 
 export async function updateSession(request: NextRequest, initialResponse: NextResponse) {
-  let response = initialResponse;
+  let response = initialResponse
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest, initialResponse: NextR
 
   // Skip auth checks for API routes - keep original response with headers
   if (url.pathname.startsWith('/api')) {
-    return response;
+    return response
   }
 
   const next = url.searchParams.get('next')

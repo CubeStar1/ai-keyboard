@@ -1,15 +1,13 @@
-import { NextRequest } from "next/server";
-import { getMCPTools } from "@/lib/ai/mcp/mcp-client";
-import { tavilySearchTool } from "@/lib/ai/tools/tavily-search";
-import {
-  addMemoryTool,
-  searchMemoryTool,
-  getAllMemoriesTool,
-} from "@/lib/ai/tools/memory";
-import { DEFAULT_VOICE_TOOLS, OPENAI_VOICE } from "@/lib/ai/voice";
-import { getAuthenticatedUserId } from "@/lib/supabase/auth";
+import { NextRequest } from 'next/server'
+import { getMCPTools } from '@/lib/ai/mcp/mcp-client'
+import { tavilySearchTool } from '@/lib/ai/tools/tavily-search'
+import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from '@/lib/ai/tools/memory'
+import { DEFAULT_VOICE_TOOLS, OPENAI_VOICE } from '@/lib/ai/voice'
+import { getAuthenticatedUserId } from '@/lib/supabase/auth'
 
-const getSystemPrompt = (userId: string) => `You are a voice AI assistant integrated into an intelligent keyboard. You help users with tasks, answer questions, and assist with desktop automation. Speak naturally and conversationally - avoid markdown, bullet points, or code blocks in your responses.
+const getSystemPrompt = (
+  userId: string
+) => `You are a voice AI assistant integrated into an intelligent keyboard. You help users with tasks, answer questions, and assist with desktop automation. Speak naturally and conversationally - avoid markdown, bullet points, or code blocks in your responses.
 
 ## WINDOWS MCP TOOLS - DESKTOP AUTOMATION
 
@@ -166,176 +164,173 @@ Before responding to ANY user message, you MUST:
 ## OTHER TOOLS
 - tavilySearchTool: Web search for current information
 
-Be concise and conversational. Personalize responses based on stored memories. Store new facts without asking.`;
+Be concise and conversational. Personalize responses based on stored memories. Store new facts without asking.`
 
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.OPENAI_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "OPENAI_API_KEY is not set" }),
-        { status: 500 }
-      );
+      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY is not set' }), { status: 500 })
     }
 
     const { model, voice } = (await request.json()) as {
-      model?: string;
-      voice?: string;
-    };
-
-    const userId = await getAuthenticatedUserId(request);
-
-    if (!userId) {
-      return new Response("Unauthorized", { status: 401 });
+      model?: string
+      voice?: string
     }
 
-    const mcpTools = await getMCPTools();
-    const mcpToolNames = Object.keys(mcpTools);
-    
+    const userId = await getAuthenticatedUserId(request)
+
+    if (!userId) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+
+    const mcpTools = await getMCPTools()
+    const mcpToolNames = Object.keys(mcpTools)
+
     if (mcpToolNames.length > 0) {
-      console.log(`[VoiceAgent] ${mcpToolNames.length} MCP tools loaded`);
+      console.log(`[VoiceAgent] ${mcpToolNames.length} MCP tools loaded`)
     }
 
     const openAIMcpTools = Object.entries(mcpTools).map(([name, tool]) => {
-      return vercelAIToolToOpenAITool(tool, name);
-    });
+      return vercelAIToolToOpenAITool(tool, name)
+    })
 
     const builtInTools = [
       {
-        name: "tavilySearchTool",
-        type: "function",
-        description: "Search the web using Tavily for up-to-date information, news, and research.",
+        name: 'tavilySearchTool',
+        type: 'function',
+        description: 'Search the web using Tavily for up-to-date information, news, and research.',
         parameters: {
-          type: "object",
+          type: 'object',
           properties: {
             query: {
-              type: "string",
-              description: "The search query to use.",
+              type: 'string',
+              description: 'The search query to use.',
             },
           },
-          required: ["query"],
+          required: ['query'],
         },
       },
       {
-        name: "addMemory",
-        type: "function",
-        description: "Store important information from the conversation as a memory. Use this to remember user preferences, facts, and context for future interactions.",
+        name: 'addMemory',
+        type: 'function',
+        description:
+          'Store important information from the conversation as a memory. Use this to remember user preferences, facts, and context for future interactions.',
         parameters: {
-          type: "object",
+          type: 'object',
           properties: {
             messages: {
-              type: "array",
-              description: "The conversation messages to extract memories from.",
+              type: 'array',
+              description: 'The conversation messages to extract memories from.',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  role: { type: "string", enum: ["user", "assistant"] },
-                  content: { type: "string" },
+                  role: { type: 'string', enum: ['user', 'assistant'] },
+                  content: { type: 'string' },
                 },
-                required: ["role", "content"],
+                required: ['role', 'content'],
               },
             },
             userId: {
-              type: "string",
+              type: 'string',
               description: `The unique identifier for the user. Use '${userId}'.`,
             },
           },
-          required: ["messages", "userId"],
+          required: ['messages', 'userId'],
         },
       },
       {
-        name: "searchMemory",
-        type: "function",
-        description: "Search through stored memories to find relevant information about the user.",
+        name: 'searchMemory',
+        type: 'function',
+        description: 'Search through stored memories to find relevant information about the user.',
         parameters: {
-          type: "object",
+          type: 'object',
           properties: {
             query: {
-              type: "string",
-              description: "The search query to find relevant memories.",
+              type: 'string',
+              description: 'The search query to find relevant memories.',
             },
             userId: {
-              type: "string",
+              type: 'string',
               description: `The unique identifier for the user. Use '${userId}'.`,
             },
             limit: {
-              type: "number",
-              description: "Maximum number of memories to return.",
+              type: 'number',
+              description: 'Maximum number of memories to return.',
             },
           },
-          required: ["query", "userId"],
+          required: ['query', 'userId'],
         },
       },
       {
-        name: "getAllMemories",
-        type: "function",
-        description: "Retrieve all stored memories for a specific user.",
+        name: 'getAllMemories',
+        type: 'function',
+        description: 'Retrieve all stored memories for a specific user.',
         parameters: {
-          type: "object",
+          type: 'object',
           properties: {
             userId: {
-              type: "string",
+              type: 'string',
               description: `The unique identifier for the user. Use '${userId}'.`,
             },
           },
-          required: ["userId"],
+          required: ['userId'],
         },
       },
-    ];
+    ]
 
     // Combine all tools
-    const bindingTools = [...openAIMcpTools, ...builtInTools, ...DEFAULT_VOICE_TOOLS];
+    const bindingTools = [...openAIMcpTools, ...builtInTools, ...DEFAULT_VOICE_TOOLS]
 
-    console.log(`[VoiceAgent] Total tools: ${bindingTools.length}`);
+    console.log(`[VoiceAgent] Total tools: ${bindingTools.length}`)
 
-    const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
-      method: "POST",
+    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model || "gpt-realtime-mini",
+        model: model || 'gpt-realtime-mini',
         voice: voice || OPENAI_VOICE.Ash,
         input_audio_transcription: {
-          model: "whisper-1",
+          model: 'whisper-1',
         },
         instructions: getSystemPrompt(userId),
         tools: bindingTools,
       }),
-    });
+    })
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[VoiceAgent] OpenAI error:", errorText);
-      return new Response(
-        JSON.stringify({ error: `OpenAI API error: ${response.status}` }),
-        { status: response.status }
-      );
+      const errorText = await response.text()
+      console.error('[VoiceAgent] OpenAI error:', errorText)
+      return new Response(JSON.stringify({ error: `OpenAI API error: ${response.status}` }), {
+        status: response.status,
+      })
     }
 
     return new Response(response.body, {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
-    });
+    })
   } catch (error: any) {
-    console.error("[VoiceAgent] Error:", error);
+    console.error('[VoiceAgent] Error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-    });
+    })
   }
 }
 
 function vercelAIToolToOpenAITool(tool: any, name: string) {
   return {
     name,
-    type: "function",
-    description: tool.description || "",
+    type: 'function',
+    description: tool.description || '',
     parameters: tool.inputSchema?.jsonSchema ?? {
-      type: "object",
+      type: 'object',
       properties: {},
       required: [],
     },
-  };
+  }
 }

@@ -1,15 +1,18 @@
-import { NextResponse } from 'next/server';
-import { generateText } from 'ai';
-import { myProvider } from '@/lib/ai';
-import { defaultFastModel } from '@/lib/ai/models';
-import { searchMemory } from '@/lib/ai/tools/memory/client';
+import { NextResponse } from 'next/server'
+import { generateText } from 'ai'
+import { myProvider } from '@/lib/ai'
+import { defaultFastModel } from '@/lib/ai/models'
+import { searchMemory } from '@/lib/ai/tools/memory/client'
 
-const getSystemPrompt = (relevantMemories: string[], currentDate: string) => `You are an expert CODE COMPLETION assistant for coding interviews. Your job is to COMPLETE the code that's already written, NOT rewrite it from scratch.
+const getSystemPrompt = (
+  relevantMemories: string[],
+  currentDate: string
+) => `You are an expert CODE COMPLETION assistant for coding interviews. Your job is to COMPLETE the code that's already written, NOT rewrite it from scratch.
 
 Current Date: ${currentDate}
 
 ## USER PREFERENCES
-${relevantMemories.length > 0 ? relevantMemories.map(m => `- ${m}`).join('\n') : 'No preferences found. Default to Python.'}
+${relevantMemories.length > 0 ? relevantMemories.map((m) => `- ${m}`).join('\n') : 'No preferences found. Default to Python.'}
 
 ## YOUR TASK
 1. Look at the screenshot - it shows a coding problem AND partially written code
@@ -50,50 +53,61 @@ Your output should be ONLY:
             seenitems[val]=i
         return []
 
-Notice: Tight spacing (\`diff=target-val\`), running variable names (\`seenitems\`, no camelCase), and no comments.`;
+Notice: Tight spacing (\`diff=target-val\`), running variable names (\`seenitems\`, no camelCase), and no comments.`
 
 export async function POST(req: Request) {
   try {
-    let body;
+    let body
     try {
-      body = await req.json();
+      body = await req.json()
     } catch {
-      return NextResponse.json({ code: '', error: 'Invalid request' }, { status: 400 });
+      return NextResponse.json({ code: '', error: 'Invalid request' }, { status: 400 })
     }
-    
-    const { screenshot, userId, cachedMemories, model } = body;
-    
+
+    const { screenshot, userId, cachedMemories, model } = body
+
     if (!screenshot) {
-      return NextResponse.json({ code: '', error: 'No screenshot provided' }, { status: 400 });
+      return NextResponse.json({ code: '', error: 'No screenshot provided' }, { status: 400 })
     }
 
     if (!userId) {
-      return NextResponse.json({ code: '', error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ code: '', error: 'Unauthorized' }, { status: 401 })
     }
 
     // Use the model from request, fallback to defaultFastModel
-    const selectedModel = model || defaultFastModel;
+    const selectedModel = model || defaultFastModel
 
     // Use cached memories if provided, otherwise fetch (fallback)
-    let relevantMemories: string[] = cachedMemories || [];
-    
+    let relevantMemories: string[] = cachedMemories || []
+
     if (relevantMemories.length === 0) {
       try {
-        console.log('[interview-ghost-suggest] Fetching memories for user:', userId);
-        const memoryResult = await searchMemory('programming language preference coding style', userId, 15);
-        const memories = memoryResult?.results?.results || [];
+        console.log('[interview-ghost-suggest] Fetching memories for user:', userId)
+        const memoryResult = await searchMemory(
+          'programming language preference coding style',
+          userId,
+          15
+        )
+        const memories = memoryResult?.results?.results || []
         if (Array.isArray(memories)) {
-          relevantMemories = memories.map((m: any) => m.memory);
+          relevantMemories = memories.map((m: any) => m.memory)
         }
       } catch (err) {
-        console.warn('[interview-ghost-suggest] Failed to fetch memories:', err);
+        console.warn('[interview-ghost-suggest] Failed to fetch memories:', err)
       }
     }
 
-    console.log('[interview-ghost-suggest] Processing screenshot with', relevantMemories.length, 'memories (cached:', !!cachedMemories, '), model:', selectedModel);
-    
-    const startTime = Date.now();
-    
+    console.log(
+      '[interview-ghost-suggest] Processing screenshot with',
+      relevantMemories.length,
+      'memories (cached:',
+      !!cachedMemories,
+      '), model:',
+      selectedModel
+    )
+
+    const startTime = Date.now()
+
     const result = await generateText({
       model: myProvider.languageModel(selectedModel),
       system: getSystemPrompt(relevantMemories, new Date().toLocaleString()),
@@ -101,24 +115,30 @@ export async function POST(req: Request) {
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Look at the screenshot. Complete the code that is already written. Return ONLY the remaining implementation - do not repeat the class, function definition, or docstring that is already visible. Just the code body needed to complete the solution.' },
+            {
+              type: 'text',
+              text: 'Look at the screenshot. Complete the code that is already written. Return ONLY the remaining implementation - do not repeat the class, function definition, or docstring that is already visible. Just the code body needed to complete the solution.',
+            },
             { type: 'image', image: screenshot },
           ],
         },
       ],
       temperature: 0.3,
-    });
+    })
 
-    let code = result.text.trim();
-    
-    code = code.replace(/^```[\w]*\n?/gm, '').replace(/\n?```$/gm, '').trim();
-    
-    const latency = Date.now() - startTime;
-    console.log('[interview-ghost-suggest] Generated code in', latency, 'ms, length:', code.length);
+    let code = result.text.trim()
 
-    return NextResponse.json({ code, latency });
+    code = code
+      .replace(/^```[\w]*\n?/gm, '')
+      .replace(/\n?```$/gm, '')
+      .trim()
+
+    const latency = Date.now() - startTime
+    console.log('[interview-ghost-suggest] Generated code in', latency, 'ms, length:', code.length)
+
+    return NextResponse.json({ code, latency })
   } catch (error) {
-    console.error('[interview-ghost-suggest] Error:', error);
-    return NextResponse.json({ code: '', error: 'Failed to generate code' }, { status: 500 });
+    console.error('[interview-ghost-suggest] Error:', error)
+    return NextResponse.json({ code: '', error: 'Failed to generate code' }, { status: 500 })
   }
 }

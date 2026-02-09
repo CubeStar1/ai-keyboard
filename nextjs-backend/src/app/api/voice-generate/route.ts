@@ -1,13 +1,12 @@
-import { experimental_transcribe as transcribe, generateText, stepCountIs } from "ai";
-import { createGroq } from "@ai-sdk/groq";
-import { myProvider } from "@/lib/ai/provider";
-import { defaultModel } from "@/lib/ai/models";
-import { addMemoryTool, searchMemoryTool } from "@/lib/ai/tools/memory";
+import { experimental_transcribe as transcribe, generateText, stepCountIs } from 'ai'
+import { createGroq } from '@ai-sdk/groq'
+import { myProvider } from '@/lib/ai/provider'
+import { defaultModel } from '@/lib/ai/models'
+import { addMemoryTool, searchMemoryTool } from '@/lib/ai/tools/memory'
 
 function getSystemPrompt(userId: string, memories: string[]): string {
-  const memoryContext = memories.length > 0 
-    ? memories.map(m => `- ${m}`).join('\n')
-    : 'No user context available.';
+  const memoryContext =
+    memories.length > 0 ? memories.map((m) => `- ${m}`).join('\n') : 'No user context available.'
 
   return `You are a content writing assistant. Generate the requested content based on the user's voice command.
 
@@ -34,80 +33,80 @@ User ID for memory tools: ${userId}
 1. Check the user context above first
 2. Use searchMemory only if you need more specific info not in context
 3. Generate personalized content
-4. Output only the final content`;
+4. Output only the final content`
 }
 
 async function parseAudioData(audio: string): Promise<Uint8Array> {
-  if (audio.startsWith("data:")) {
-    const [, base64Data] = audio.split(",");
-    const binaryString = atob(base64Data);
-    const audioData = new Uint8Array(binaryString.length);
+  if (audio.startsWith('data:')) {
+    const [, base64Data] = audio.split(',')
+    const binaryString = atob(base64Data)
+    const audioData = new Uint8Array(binaryString.length)
     for (let i = 0; i < binaryString.length; i++) {
-      audioData[i] = binaryString.charCodeAt(i);
+      audioData[i] = binaryString.charCodeAt(i)
     }
-    return audioData;
+    return audioData
   }
 
-  const binaryString = atob(audio);
-  const audioData = new Uint8Array(binaryString.length);
+  const binaryString = atob(audio)
+  const audioData = new Uint8Array(binaryString.length)
   for (let i = 0; i < binaryString.length; i++) {
-    audioData[i] = binaryString.charCodeAt(i);
+    audioData[i] = binaryString.charCodeAt(i)
   }
-  return audioData;
+  return audioData
 }
 
 export async function POST(req: Request) {
   try {
-    const { audio, userId, cachedMemories } = await req.json();
+    const { audio, userId, cachedMemories } = await req.json()
 
     if (!audio) {
-      return Response.json({ error: "No audio data provided" }, { status: 400 });
+      return Response.json({ error: 'No audio data provided' }, { status: 400 })
     }
 
-    const audioData = await parseAudioData(audio);
-    console.log("[VoiceGenerate] Audio bytes:", audioData.length);
+    const audioData = await parseAudioData(audio)
+    console.log('[VoiceGenerate] Audio bytes:', audioData.length)
 
-    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
     const transcription = await transcribe({
-      model: groq.transcription("whisper-large-v3"),
+      model: groq.transcription('whisper-large-v3'),
       audio: audioData,
-    });
+    })
 
-    console.log("[VoiceGenerate] Transcription:", transcription.text);
+    console.log('[VoiceGenerate] Transcription:', transcription.text)
 
     if (!transcription.text || transcription.text.length === 0) {
       return Response.json({
-        transcription: "",
-        generated: "",
-      });
+        transcription: '',
+        generated: '',
+      })
     }
 
-    const effectiveUserId = userId || "anonymous";
-    const memories: string[] = cachedMemories || [];
-    console.log("[VoiceGenerate] UserId:", effectiveUserId, "Memories:", memories.length);
+    const effectiveUserId = userId || 'anonymous'
+    const memories: string[] = cachedMemories || []
+    console.log('[VoiceGenerate] UserId:', effectiveUserId, 'Memories:', memories.length)
 
     const result = await generateText({
       model: myProvider.languageModel(defaultModel),
       system: getSystemPrompt(effectiveUserId, memories),
-      messages: [{ role: "user", content: transcription.text }],
+      messages: [{ role: 'user', content: transcription.text }],
       tools: {
         addMemory: addMemoryTool,
         searchMemory: searchMemoryTool,
       },
       stopWhen: stepCountIs(8),
-    });
+    })
 
-    console.log("[VoiceGenerate] Generated:", result.text?.slice(0, 100));
+    console.log('[VoiceGenerate] Generated:', result.text?.slice(0, 100))
 
     return Response.json({
       transcription: transcription.text,
       generated: result.text,
-    });
+    })
   } catch (error) {
-    console.error("Voice generate error:", error);
+    console.error('Voice generate error:', error)
     return Response.json(
-      { error: error instanceof Error ? error.message : "Voice generate failed" },
+      { error: error instanceof Error ? error.message : 'Voice generate failed' },
       { status: 500 }
-    );
+    )
   }
 }

@@ -2,16 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
-import {
-  Brain,
-  Keyboard,
-  Monitor,
-  Sparkles,
-  MessageSquare,
-  Zap,
-  Mic,
-  Eye,
-} from 'lucide-react'
+import { Brain, Keyboard, Monitor, Sparkles, MessageSquare, Zap, Mic, Eye } from 'lucide-react'
 import React, { MouseEvent } from 'react'
 import { BackgroundGrid } from './background-grid'
 import { Gutter } from './gutter'
@@ -25,27 +16,32 @@ interface FeatureCard {
 const features: FeatureCard[] = [
   {
     title: 'Interview Copilot',
-    description: 'Screen capture, problem analysis, and real-time code suggestions for technical interviews.',
+    description:
+      'Screen capture, problem analysis, and real-time code suggestions for technical interviews.',
     icon: <Monitor className="h-6 w-6" />,
   },
   {
     title: 'Action Menu',
-    description: 'Quick AI actions: fix grammar, change tone, expand text, and run custom snippets.',
+    description:
+      'Quick AI actions: fix grammar, change tone, expand text, and run custom snippets.',
     icon: <Keyboard className="h-6 w-6" />,
   },
   {
     title: 'Persistent Memory',
-    description: 'Long-term context retention using vector databases. Your AI remembers everything.',
+    description:
+      'Long-term context retention using vector databases. Your AI remembers everything.',
     icon: <Brain className="h-6 w-6" />,
   },
   {
     title: 'Ghost Text',
-    description: 'Subtle IDE suggestions that appear as you type, guiding you through complex code.',
+    description:
+      'Subtle IDE suggestions that appear as you type, guiding you through complex code.',
     icon: <Zap className="h-6 w-6" />,
   },
   {
     title: 'Knowledge Graph',
-    description: 'Visualize your cognitive architecture. Discover connections between snippets and past sessions.',
+    description:
+      'Visualize your cognitive architecture. Discover connections between snippets and past sessions.',
     icon: <Eye className="h-6 w-6" />,
   },
   {
@@ -60,7 +56,8 @@ const features: FeatureCard[] = [
   },
   {
     title: 'Invisible Typing',
-    description: 'Seamless AI-assisted typing. Tabby types directly into any app with human rhythm.',
+    description:
+      'Seamless AI-assisted typing. Tabby types directly into any app with human rhythm.',
     icon: <Sparkles className="h-6 w-6" />,
   },
 ]

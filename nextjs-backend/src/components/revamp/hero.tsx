@@ -72,8 +72,8 @@ export function Hero() {
               Keyboard Layer
             </h1>
             <p className="max-w-xl text-base md:text-lg">
-              Tabby is a system-wide AI assistant that lives at the point of input. 
-              Transform your desktop into a real-time collaborator for coding, writing, and interviews.
+              Tabby is a system-wide AI assistant that lives at the point of input. Transform your
+              desktop into a real-time collaborator for coding, writing, and interviews.
             </p>
           </motion.div>
 

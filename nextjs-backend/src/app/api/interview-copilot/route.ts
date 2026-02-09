@@ -6,41 +6,50 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
-} from "ai";
-import { myProvider } from "@/lib/ai";
-import { defaultModel } from "@/lib/ai/models";
-import { z } from "zod";
-import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from "@/lib/ai/tools/memory";
-import { generateUUID } from "@/lib/utils/generate-uuid";
-import {
-  saveChat,
-  saveMessages,
-  getChatById,
-  generateTitleFromUserMessage,
-} from "@/actions/chat";
-import { getAuthenticatedUserId } from "@/lib/supabase/auth";
+} from 'ai'
+import { myProvider } from '@/lib/ai'
+import { defaultModel } from '@/lib/ai/models'
+import { z } from 'zod'
+import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from '@/lib/ai/tools/memory'
+import { generateUUID } from '@/lib/utils/generate-uuid'
+import { saveChat, saveMessages, getChatById, generateTitleFromUserMessage } from '@/actions/chat'
+import { getAuthenticatedUserId } from '@/lib/supabase/auth'
 
 const analysisSchema = z.object({
-  idea: z.string().describe("Problem understanding, key observations, approaches"),
-  code: z.string().describe("Clean, well-commented implementation code"),
-  walkthrough: z.string().describe("Step-by-step explanation of the solution"),
-  testCases: z.array(z.object({
-    input: z.string(),
-    output: z.string(),
-    reason: z.string()
-  })).describe("Edge cases and test inputs"),
-  mistakes: z.array(z.object({
-    mistake: z.string(),
-    correction: z.string(),
-    pattern: z.string()
-  })).describe("Common mistakes for this problem type based on user history"),
-  memories: z.array(z.object({
-    memory: z.string().describe("The memory content - a fact or preference about the user"),
-    createdAt: z.string().describe("ISO timestamp when this memory was retrieved/created")
-  })).describe("Relevant memories retrieved about the user's preferences and context")
-});
+  idea: z.string().describe('Problem understanding, key observations, approaches'),
+  code: z.string().describe('Clean, well-commented implementation code'),
+  walkthrough: z.string().describe('Step-by-step explanation of the solution'),
+  testCases: z
+    .array(
+      z.object({
+        input: z.string(),
+        output: z.string(),
+        reason: z.string(),
+      })
+    )
+    .describe('Edge cases and test inputs'),
+  mistakes: z
+    .array(
+      z.object({
+        mistake: z.string(),
+        correction: z.string(),
+        pattern: z.string(),
+      })
+    )
+    .describe('Common mistakes for this problem type based on user history'),
+  memories: z
+    .array(
+      z.object({
+        memory: z.string().describe('The memory content - a fact or preference about the user'),
+        createdAt: z.string().describe('ISO timestamp when this memory was retrieved/created'),
+      })
+    )
+    .describe("Relevant memories retrieved about the user's preferences and context"),
+})
 
-const getSystemPrompt = (userId: string) => `You are an expert Interview Copilot for technical coding interviews.
+const getSystemPrompt = (
+  userId: string
+) => `You are an expert Interview Copilot for technical coding interviews.
 
 ## YOUR MISSION
 Analyze the user's screen (showing a coding problem) and provide comprehensive assistance with perfectly structured, GitHub-flavored Markdown output.
@@ -139,49 +148,49 @@ Include ALL relevant memories you retrieved from the memory search. Each memory 
 6. **Include past mistakes** in the \`mistakes\` field (only from memory search results)
 7. **Store any new insights** about the user using \`addMemory\`
 
-Be concise but thorough. Use the user's preferred language if found in memory.`;
+Be concise but thorough. Use the user's preferred language if found in memory.`
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  const body = await req.json()
   const { messages, conversationId, screenshot } = body as {
-    messages: UIMessage[];
-    conversationId?: string;
-    screenshot?: string;
-  };
+    messages: UIMessage[]
+    conversationId?: string
+    screenshot?: string
+  }
 
   if (!messages || !Array.isArray(messages)) {
-    return new Response("Missing messages", { status: 400 });
+    return new Response('Missing messages', { status: 400 })
   }
 
-  const userId = await getAuthenticatedUserId(req);
+  const userId = await getAuthenticatedUserId(req)
 
   if (!userId) {
-    return new Response("Unauthorized", { status: 401 });
+    return new Response('Unauthorized', { status: 401 })
   }
 
-  const userMessage = messages[messages.length - 1];
+  const userMessage = messages[messages.length - 1]
 
   if (conversationId && userMessage) {
-    const existingChat = await getChatById(conversationId);
+    const existingChat = await getChatById(conversationId)
     if (!existingChat) {
-      const title = await generateTitleFromUserMessage(userMessage, defaultModel);
-      await saveChat({ id: conversationId, title, type: "interview", userId });
+      const title = await generateTitleFromUserMessage(userMessage, defaultModel)
+      await saveChat({ id: conversationId, title, type: 'interview', userId })
     }
-    await saveMessages([userMessage], conversationId);
+    await saveMessages([userMessage], conversationId)
   }
 
-  const modelMessages = await convertToModelMessages(messages);
-  
+  const modelMessages = await convertToModelMessages(messages)
+
   if (screenshot) {
-    const lastMsg = modelMessages[modelMessages.length - 1];
-    if (lastMsg && lastMsg.role === "user") {
-      if (typeof lastMsg.content === "string") {
+    const lastMsg = modelMessages[modelMessages.length - 1]
+    if (lastMsg && lastMsg.role === 'user') {
+      if (typeof lastMsg.content === 'string') {
         lastMsg.content = [
-          { type: "text", text: lastMsg.content },
-          { type: "image", image: screenshot },
-        ];
+          { type: 'text', text: lastMsg.content },
+          { type: 'image', image: screenshot },
+        ]
       } else if (Array.isArray(lastMsg.content)) {
-        lastMsg.content.push({ type: "image", image: screenshot });
+        lastMsg.content.push({ type: 'image', image: screenshot })
       }
     }
   }
@@ -203,42 +212,42 @@ export async function POST(req: Request) {
         }),
         stopWhen: stepCountIs(5),
         onError: (error) => {
-          console.error("Interview Copilot stream error:", error);
+          console.error('Interview Copilot stream error:', error)
         },
-      });
+      })
 
-      result.consumeStream();
+      result.consumeStream()
 
       dataStream.merge(
         result.toUIMessageStream({
           sendReasoning: true,
         })
-      );
+      )
     },
     onFinish: async ({ messages: generatedMessages }) => {
       if (conversationId && generatedMessages && generatedMessages.length > 0) {
-        const assistantMessages = generatedMessages.filter(m => m.role === "assistant");
+        const assistantMessages = generatedMessages.filter((m) => m.role === 'assistant')
         if (assistantMessages.length > 0) {
-          const messagesWithMetadata = assistantMessages.map(msg => {
-            const textPart = msg.parts?.find((p: { type: string }) => p.type === "text");
-            let analysis = null;
+          const messagesWithMetadata = assistantMessages.map((msg) => {
+            const textPart = msg.parts?.find((p: { type: string }) => p.type === 'text')
+            let analysis = null
             if (textPart && 'text' in textPart) {
               try {
-                analysis = JSON.parse(textPart.text);
+                analysis = JSON.parse(textPart.text)
               } catch {
                 // Not JSON
               }
             }
             return {
               ...msg,
-              metadata: analysis ? { analysis, type: "interview" } : { type: "interview" },
-            };
-          });
-          await saveMessages(messagesWithMetadata as UIMessage[], conversationId);
+              metadata: analysis ? { analysis, type: 'interview' } : { type: 'interview' },
+            }
+          })
+          await saveMessages(messagesWithMetadata as UIMessage[], conversationId)
         }
       }
     },
-  });
+  })
 
-  return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+  return new Response(stream.pipeThrough(new JsonToSseTransformStream()))
 }

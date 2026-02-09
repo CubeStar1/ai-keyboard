@@ -5,8 +5,7 @@ import { Footer } from '@/components/revamp/footer'
 
 export const metadata: Metadata = {
   title: 'Tabby',
-  description:
-    'Tabby',
+  description: 'Tabby',
 }
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {

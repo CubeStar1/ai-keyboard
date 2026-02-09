@@ -5,26 +5,18 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
-} from "ai";
-import { myProvider, getMCPTools } from "@/lib/ai";
-import { tavilySearchTool } from "@/lib/ai/tools/tavily-search";
-import {
-  addMemoryTool,
-  searchMemoryTool,
-  getAllMemoriesTool,
-} from "@/lib/ai/tools/memory";
-import { generateUUID } from "@/lib/utils/generate-uuid";
-import { defaultModel } from "@/lib/ai/models";
-import { getAuthenticatedUserId } from "@/lib/supabase/auth";
-import {
-  saveChat,
-  saveMessages,
-  getChatById,
-  generateTitleFromUserMessage,
-} from "@/actions/chat";
+} from 'ai'
+import { myProvider, getMCPTools } from '@/lib/ai'
+import { tavilySearchTool } from '@/lib/ai/tools/tavily-search'
+import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from '@/lib/ai/tools/memory'
+import { generateUUID } from '@/lib/utils/generate-uuid'
+import { defaultModel } from '@/lib/ai/models'
+import { getAuthenticatedUserId } from '@/lib/supabase/auth'
+import { saveChat, saveMessages, getChatById, generateTitleFromUserMessage } from '@/actions/chat'
 
-
-const getSystemPrompt = (userId: string) => `You are an AI assistant integrated into an intelligent keyboard. You help users write better, answer questions, and assist with tasks. You have powerful desktop automation capabilities through Windows MCP tools.
+const getSystemPrompt = (
+  userId: string
+) => `You are an AI assistant integrated into an intelligent keyboard. You help users write better, answer questions, and assist with tasks. You have powerful desktop automation capabilities through Windows MCP tools.
 
 ## WINDOWS MCP TOOLS - DESKTOP AUTOMATION
 
@@ -212,49 +204,53 @@ User asks: "Draft an email about mistakes I made in LeetCode"
 ## OTHER TOOLS
 - tavilySearchTool: Web search for current information
 
-Be concise. Personalize responses based on stored memories. Store new facts without asking.`;
-
+Be concise. Personalize responses based on stored memories. Store new facts without asking.`
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { messages, conversationId, model, userId: bodyUserId } = body as {
-    messages: UIMessage[];
-    conversationId?: string;
-    model?: string;
-    userId?: string;
-  };
+  const body = await req.json()
+  const {
+    messages,
+    conversationId,
+    model,
+    userId: bodyUserId,
+  } = body as {
+    messages: UIMessage[]
+    conversationId?: string
+    model?: string
+    userId?: string
+  }
 
   if (!messages || !Array.isArray(messages)) {
-    return new Response("Missing messages", { status: 400 });
+    return new Response('Missing messages', { status: 400 })
   }
 
   // Get authenticated user from cookies or Authorization header
   // Also accepts userId from body as fallback (for internal calls)
-  let userId: string | undefined = bodyUserId;
-  
+  let userId: string | undefined = bodyUserId
+
   if (!userId) {
-    const authenticatedId = await getAuthenticatedUserId(req);
+    const authenticatedId = await getAuthenticatedUserId(req)
 
     if (!authenticatedId) {
-      return new Response("Unauthorized", { status: 401 });
+      return new Response('Unauthorized', { status: 401 })
     }
-    userId = authenticatedId;
+    userId = authenticatedId
   }
 
-  const mcpTools = await getMCPTools();
-  const modelMessages = await convertToModelMessages(messages);
+  const mcpTools = await getMCPTools()
+  const modelMessages = await convertToModelMessages(messages)
 
-  const userMessage = messages[messages.length - 1];
+  const userMessage = messages[messages.length - 1]
 
   if (conversationId && userMessage) {
-    const existingChat = await getChatById(conversationId);
+    const existingChat = await getChatById(conversationId)
 
     if (!existingChat) {
-      const title = await generateTitleFromUserMessage(userMessage, model || defaultModel);
-      await saveChat({ id: conversationId, title, userId });
+      const title = await generateTitleFromUserMessage(userMessage, model || defaultModel)
+      await saveChat({ id: conversationId, title, userId })
     }
 
-    await saveMessages([userMessage], conversationId);
+    await saveMessages([userMessage], conversationId)
   }
 
   const stream = createUIMessageStream({
@@ -273,24 +269,24 @@ export async function POST(req: Request) {
         },
         stopWhen: stepCountIs(20),
         onError: (error) => {
-          console.error("Chat stream error:", error);
+          console.error('Chat stream error:', error)
         },
-      });
+      })
 
-      result.consumeStream();
+      result.consumeStream()
 
       dataStream.merge(
         result.toUIMessageStream({
           sendReasoning: true,
         })
-      );
+      )
     },
     onFinish: async ({ messages: generatedMessages }) => {
       if (conversationId && generatedMessages && generatedMessages.length > 0) {
-        await saveMessages(generatedMessages as UIMessage[], conversationId);
+        await saveMessages(generatedMessages as UIMessage[], conversationId)
       }
     },
-  });
+  })
 
-  return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+  return new Response(stream.pipeThrough(new JsonToSseTransformStream()))
 }

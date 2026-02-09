@@ -3,8 +3,7 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createGroq } from '@ai-sdk/groq'
 import { createCerebras } from '@ai-sdk/cerebras'
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 
 export const titleGenerationModels: Record<string, string> = {
   'gpt-4o-mini': 'gpt-4o-mini',
@@ -59,7 +58,6 @@ export function createMyProvider(
     apiKey: apiKeys.google || process.env.GOOGLE_GENERATIVE_AI_API_KEY,
   })
 
-
   const groq = createGroq({
     apiKey: apiKeys.groq || process.env.GROQ_API_KEY,
   })
@@ -71,8 +69,7 @@ export function createMyProvider(
   const lmstudio = createOpenAICompatible({
     name: 'lmstudio',
     baseURL: 'http://localhost:1234/v1',
-  });
-
+  })
 
   return customProvider({
     languageModels: {

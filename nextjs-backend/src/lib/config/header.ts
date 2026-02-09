@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react"
+import { LucideIcon } from 'lucide-react'
 
 export interface HeaderLink {
   href: string
@@ -17,17 +17,17 @@ export interface HeaderConfig {
 
 export const headerConfig: HeaderConfig = {
   brand: {
-    title: "Tabby",
-    icon: "/logos/tabby-logo.png"
+    title: 'Tabby',
+    icon: '/logos/tabby-logo.png',
   },
   navigationLinks: [
     {
-      href: "/#features",
-      label: "Features"
+      href: '/#features',
+      label: 'Features',
     },
     {
-      href: "/docs",
-      label: "Docs"
-    }
-  ] 
+      href: '/docs',
+      label: 'Docs',
+    },
+  ],
 }

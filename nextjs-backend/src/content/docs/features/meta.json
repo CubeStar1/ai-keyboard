@@ -1,9 +1,4 @@
 {
   "title": "Features",
-  "pages": [
-    "interview-copilot",
-    "action-menu",
-    "suggestions",
-    "brain-memory"
-  ]
+  "pages": ["interview-copilot", "action-menu", "suggestions", "brain-memory"]
 }

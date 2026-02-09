@@ -5,18 +5,16 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
-} from "ai";
-import { myProvider } from "@/lib/ai";
-import { defaultFastModel } from "@/lib/ai/models";
-import {
-  addMemoryTool,
-  searchMemoryTool,
-  getAllMemoriesTool,
-} from "@/lib/ai/tools/memory";
-import { generateUUID } from "@/lib/utils/generate-uuid";
-import { getAuthenticatedUserId } from "@/lib/supabase/auth";
+} from 'ai'
+import { myProvider } from '@/lib/ai'
+import { defaultFastModel } from '@/lib/ai/models'
+import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from '@/lib/ai/tools/memory'
+import { generateUUID } from '@/lib/utils/generate-uuid'
+import { getAuthenticatedUserId } from '@/lib/supabase/auth'
 
-const getSystemPrompt = (userId: string) => `You are a SENTENCE COMPLETION engine with PERSISTENT MEMORY.
+const getSystemPrompt = (
+  userId: string
+) => `You are a SENTENCE COMPLETION engine with PERSISTENT MEMORY.
 
 **CRITICAL: MEMORY TOOL USAGE IS MANDATORY - NEVER SKIP THIS**
 
@@ -76,34 +74,37 @@ Store when user mentions:
 - ❌ NEVER say "How can I help?" or similar
 
 YOU MUST USE THE MEMORY TOOLS. THIS IS NOT OPTIONAL.
-`;
-
+`
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { messages, model, userId: bodyUserId } = body as {
-    messages: UIMessage[];
-    model?: string;
-    userId?: string;
-  };
+  const body = await req.json()
+  const {
+    messages,
+    model,
+    userId: bodyUserId,
+  } = body as {
+    messages: UIMessage[]
+    model?: string
+    userId?: string
+  }
 
   if (!messages || !Array.isArray(messages)) {
-    return new Response("Missing messages", { status: 400 });
+    return new Response('Missing messages', { status: 400 })
   }
 
-  let userId: string | undefined = bodyUserId;
-  
+  let userId: string | undefined = bodyUserId
+
   if (!userId) {
-    const authenticatedId = await getAuthenticatedUserId(req);
+    const authenticatedId = await getAuthenticatedUserId(req)
 
     if (!authenticatedId) {
-      return new Response("Unauthorized", { status: 401 });
+      return new Response('Unauthorized', { status: 401 })
     }
-    userId = authenticatedId;
+    userId = authenticatedId
   }
 
-  const modelMessages = await convertToModelMessages(messages);
-  console.log("Model messages:", modelMessages);
+  const modelMessages = await convertToModelMessages(messages)
+  console.log('Model messages:', modelMessages)
 
   const stream = createUIMessageStream({
     generateId: generateUUID,
@@ -119,19 +120,19 @@ export async function POST(req: Request) {
         },
         stopWhen: stepCountIs(6),
         onError: (error) => {
-          console.error("Suggest stream error:", error);
+          console.error('Suggest stream error:', error)
         },
-      });
+      })
 
-      result.consumeStream();
+      result.consumeStream()
 
       dataStream.merge(
         result.toUIMessageStream({
           sendReasoning: true,
         })
-      );
+      )
     },
-  });
+  })
 
-  return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+  return new Response(stream.pipeThrough(new JsonToSseTransformStream()))
 }

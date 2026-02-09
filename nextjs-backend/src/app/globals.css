@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
@@ -51,7 +51,8 @@
   --animate-fadeIn: fadeIn 2s ease-in-out forwards;
 }
 
-html, body {
+html,
+body {
   background: transparent !important;
 }
 

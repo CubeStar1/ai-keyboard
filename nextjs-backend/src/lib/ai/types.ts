@@ -1,26 +1,26 @@
 export type ActionType =
-  | "fix-grammar"
-  | "shorten"
-  | "expand"
-  | "professional-tone"
-  | "casual-tone"
-  | "friendly-tone"
-  | "email-writer"
-  | "custom"
-  | "chat"
-  | string;
+  | 'fix-grammar'
+  | 'shorten'
+  | 'expand'
+  | 'professional-tone'
+  | 'casual-tone'
+  | 'friendly-tone'
+  | 'email-writer'
+  | 'custom'
+  | 'chat'
+  | string
 
-export type ActionGroup = "agent" | "action";
+export type ActionGroup = 'agent' | 'action'
 
 export interface Action {
-  id: ActionType;
-  label: string;
-  icon: string;
-  description?: string;
-  prompt?: string;
-  shortcut?: string;
-  isDefault?: boolean;
-  group?: ActionGroup;
+  id: ActionType
+  label: string
+  icon: string
+  description?: string
+  prompt?: string
+  shortcut?: string
+  isDefault?: boolean
+  group?: ActionGroup
 }
 
 import { LanguageModelUsage } from 'ai'
@@ -56,7 +56,7 @@ export interface Conversation {
   updated_at: string
   created_at: string
   lastContext?: AppUsage
-  type?: "chat" | "interview" | string
+  type?: 'chat' | 'interview' | string
 }
 
 export interface Message {
@@ -85,28 +85,28 @@ export interface InterviewAnalysis {
 }
 
 export interface PrepAnalysis {
-  pattern?: string;
-  difficulty?: string;
+  pattern?: string
+  difficulty?: string
   hints?: Array<{
-    level: number;
-    content: string;
-  }>;
+    level: number
+    content: string
+  }>
   similar?: Array<{
-    name: string;
-    slug?: string;
-    reason: string;
-  }>;
+    name: string
+    slug?: string
+    reason: string
+  }>
   mistakes?: Array<{
-    mistake: string;
-    correction: string;
-    pattern: string;
-  }>;
-  solution?: string;
+    mistake: string
+    correction: string
+    pattern: string
+  }>
+  solution?: string
   complexity?: {
-    time: string;
-    space: string;
-  };
-  memories?: Array<{ memory?: string; createdAt?: string }>;
+    time: string
+    space: string
+  }
+  memories?: Array<{ memory?: string; createdAt?: string }>
 }
 
 export interface InterviewMessage {

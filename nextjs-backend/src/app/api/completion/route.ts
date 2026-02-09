@@ -5,20 +5,18 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
-} from "ai";
-import { myProvider } from "@/lib/ai";
-import { ActionType } from "@/lib/ai/types";
-import { tavilySearchTool } from "@/lib/ai/tools/tavily-search";
-import {
-  addMemoryTool,
-  searchMemoryTool,
-  getAllMemoriesTool,
-} from "@/lib/ai/tools/memory";
-import { generateUUID } from "@/lib/utils/generate-uuid";
-import { defaultModel } from "@/lib/ai/models";
-import { getAuthenticatedUserId } from "@/lib/supabase/auth";
+} from 'ai'
+import { myProvider } from '@/lib/ai'
+import { ActionType } from '@/lib/ai/types'
+import { tavilySearchTool } from '@/lib/ai/tools/tavily-search'
+import { addMemoryTool, searchMemoryTool, getAllMemoriesTool } from '@/lib/ai/tools/memory'
+import { generateUUID } from '@/lib/utils/generate-uuid'
+import { defaultModel } from '@/lib/ai/models'
+import { getAuthenticatedUserId } from '@/lib/supabase/auth'
 
-const getSystemPrompt = (userId: string) => `You are an intelligent inline writing assistant integrated into an AI-powered keyboard. Your role is to provide seamless, contextually-aware text completions and transformations that feel natural and personalized.
+const getSystemPrompt = (
+  userId: string
+) => `You are an intelligent inline writing assistant integrated into an AI-powered keyboard. Your role is to provide seamless, contextually-aware text completions and transformations that feel natural and personalized.
 
 ## YOUR CAPABILITIES
 - Smart text completion and continuation
@@ -81,41 +79,45 @@ Use tavilySearchTool when you need:
 - Match capitalization and punctuation style
 - For partial completions, continue naturally from where they left off
 
-REMEMBER: Search memory before EVERY response. This is NOT optional.`;
-
+REMEMBER: Search memory before EVERY response. This is NOT optional.`
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { messages, action, customPrompt, userId: bodyUserId } = body as {
-    messages: UIMessage[];
-    action: ActionType;
-    customPrompt?: string;
-    userId?: string;
-  };
+  const body = await req.json()
+  const {
+    messages,
+    action,
+    customPrompt,
+    userId: bodyUserId,
+  } = body as {
+    messages: UIMessage[]
+    action: ActionType
+    customPrompt?: string
+    userId?: string
+  }
 
   if (!messages || !Array.isArray(messages)) {
-    return new Response("Missing messages", { status: 400 });
+    return new Response('Missing messages', { status: 400 })
   }
 
-  let userId: string | undefined = bodyUserId;
-  
+  let userId: string | undefined = bodyUserId
+
   if (!userId) {
-    const authenticatedId = await getAuthenticatedUserId(req);
+    const authenticatedId = await getAuthenticatedUserId(req)
 
     if (!authenticatedId) {
-      return new Response("Unauthorized", { status: 401 });
+      return new Response('Unauthorized', { status: 401 })
     }
-    userId = authenticatedId;
+    userId = authenticatedId
   }
 
-  console.log("API received:", { action, customPrompt: customPrompt?.slice(0, 50) });
+  console.log('API received:', { action, customPrompt: customPrompt?.slice(0, 50) })
 
   // Use custom prompt if provided, otherwise use the comprehensive system prompt
-  const systemPrompt = customPrompt 
-    ? `${customPrompt}\n\n${getSystemPrompt(userId)}` 
-    : getSystemPrompt(userId);
+  const systemPrompt = customPrompt
+    ? `${customPrompt}\n\n${getSystemPrompt(userId)}`
+    : getSystemPrompt(userId)
 
-  const modelMessages = await convertToModelMessages(messages);
+  const modelMessages = await convertToModelMessages(messages)
 
   const stream = createUIMessageStream({
     generateId: generateUUID,
@@ -132,19 +134,19 @@ export async function POST(req: Request) {
         },
         stopWhen: stepCountIs(20),
         onError: (error) => {
-          console.error("Completion stream error:", error);
+          console.error('Completion stream error:', error)
         },
-      });
+      })
 
-      result.consumeStream();
+      result.consumeStream()
 
       dataStream.merge(
         result.toUIMessageStream({
           sendReasoning: true,
         })
-      );
+      )
     },
-  });
+  })
 
-  return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+  return new Response(stream.pipeThrough(new JsonToSseTransformStream()))
 }

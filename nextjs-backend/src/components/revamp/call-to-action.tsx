@@ -48,7 +48,8 @@ export function CallToAction() {
               Elevate your typing with AI
             </h2>
             <p className="text-neutral-400">
-              Transform your workspace with a system-wide AI layer. Get real-time suggestions, intelligent actions, and persistent memory in every app.
+              Transform your workspace with a system-wide AI layer. Get real-time suggestions,
+              intelligent actions, and persistent memory in every app.
             </p>
           </div>
 
