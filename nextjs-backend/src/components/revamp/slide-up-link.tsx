@@ -36,6 +36,7 @@ export function SlideUpLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       {...(external && { target: '_blank', rel: 'noopener noreferrer' })}
       className={cn(
         'group/link relative flex w-full items-center justify-between overflow-hidden',

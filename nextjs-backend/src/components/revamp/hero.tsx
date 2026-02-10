@@ -95,7 +95,7 @@ export function Hero() {
 
             <li className="w-full">
               <SlideUpLink
-                href="/api/download"
+                href="/download"
                 label="Download for Windows"
                 variant="secondary"
                 size="md"

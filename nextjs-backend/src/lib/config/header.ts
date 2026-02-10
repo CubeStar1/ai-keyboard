@@ -29,5 +29,9 @@ export const headerConfig: HeaderConfig = {
       href: '/docs',
       label: 'Docs',
     },
+    {
+      href: '/download',
+      label: 'Download',
+    },
   ],
 }
