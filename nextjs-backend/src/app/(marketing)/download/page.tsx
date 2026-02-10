@@ -115,7 +115,7 @@ export default function DownloadPage() {
 
             <div className="border-t border-white/10 pt-8">
               <SlideUpLink
-                href="/api/download"
+                href="https://github.com/CubeStar1/ai-keyboard/releases/latest"
                 label="Download Installer"
                 variant="primary"
                 size="lg"
