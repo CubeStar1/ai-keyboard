@@ -71,7 +71,7 @@ function ServiceRow({
   const serviceColor = name === "python" ? "#50FA7B" : "#8BE9FD"
 
   return (
-    <box flexDirection="row" gap={1} paddingLeft={1}>
+    <box flexDirection="row" gap={1}>
       {info.status === "starting" ? (
         <Spinner active />
       ) : (

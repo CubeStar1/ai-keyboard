@@ -170,6 +170,8 @@ export function CommandInput() {
   return (
     <box
       width="100%"
+      height={3}
+      flexShrink={0}
       border
       borderStyle="rounded"
       borderColor="#FF8C42"

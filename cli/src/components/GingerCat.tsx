@@ -1,154 +1,62 @@
 import { useState, useEffect } from "react"
 import { useTerminalDimensions } from "@opentui/react"
 
-// ─── Proper cat ASCII art ────────────────────────────────────────────────────
-// 3 animation frames: walking with different leg positions + tail wag
-
-const CAT_1 = [
-  "       |\\      _,,,---,,_       ",
-  " ZZZzz /,`.-'`'    -.  ;-;;,_  ",
-  "      |,4-  ) )-,_. ,\\ (  `'-' ",
-  "     '---''(_/--'  `-'\\_)      ",
+// Cat butler with tuxedo - walking frames
+const BUTLER_WALK_1 = [
+  "  /\\_/\\",
+  " ( o.o )",
+  "  > ⋈ <  ",
+  " /| ▓ |\\ ",
+  "( | ▓ | )",
+  " /  ▓  \\",
+  "(__|▓|__)",
 ]
 
-const CAT_WALK_1 = [
-  "    /\\_____/\\         ",
-  "   /  o   o  \\        ",
-  "  ( ==  ^  == )       ",
-  "   )         (        ",
-  "  (           )       ",
-  "  ( (  )   (  ) )     ",
-  " (__(__)___(__)__)    ",
+const BUTLER_WALK_2 = [
+  "  /\\_/\\",
+  " ( o.o )",
+  "  > ⋈ <",
+  "  | ▓ |\\",
+  " (| ▓ | )",
+  "  / ▓  \\",
+  " (__|▓|__)",
 ]
 
-const CAT_WALK_2 = [
-  "    /\\_____/\\         ",
-  "   /  o   o  \\        ",
-  "  ( ==  ^  == )       ",
-  "   )         (        ",
-  "  (           )       ",
-  "  ( (  ) (  )  )      ",
-  " (__(__) (__) __)     ",
+const BUTLER_WALK_3 = [
+  "  /\\_/\\",
+  " ( -.- )",
+  "  > ⋈ <",
+  " /| ▓ |\\",
+  "( | ▓ | )",
+  " /  ▓  \\",
+  "(__|▓|__)",
 ]
 
-const CAT_WALK_3 = [
-  "    /\\_____/\\         ",
-  "   /  -   -  \\        ",
-  "  ( ==  ^  == )       ",
-  "   )         (        ",
-  "  (           )       ",
-  "  ((  )   (  ))       ",
-  " (_(__)___(__)_)      ",
+const BUTLER_WALK_4 = [
+  "  /\\_/\\",
+  " ( o.o )",
+  "  > ⋈ <",
+  " /| ▓ |",
+  "( | ▓ |)",
+  "  \\ ▓  \\",
+  "  (__|▓|__)",
 ]
 
-// Bigger, better cat - unmistakably a cat
+const CAT_FRAMES = [BUTLER_WALK_1, BUTLER_WALK_2, BUTLER_WALK_3, BUTLER_WALK_4]
 
-const BIG_1 = [
-  "    |\\__/|            ",
-  "    /     \\           ",
-  "   / . . . \\          ",
-  "  (   >Y<   )         ",
-  "   \\  `-'  /          ",
-  "    |     |           ",
-  "    /|   |\\           ",
-  "   (_|   |_)   ~      ",
-]
+function trimmedWidth(line: string): number {
+  return line.replace(/\s+$/u, "").length
+}
 
-const BIG_2 = [
-  "    |\\__/|            ",
-  "    /     \\     ~     ",
-  "   / . . . \\          ",
-  "  (   >Y<   )         ",
-  "   \\  `-'  /          ",
-  "    |     |           ",
-  "   /|     |\\          ",
-  "  (_|     |_)         ",
-]
-
-const BIG_3 = [
-  "    |\\__/|      ~    ",
-  "    /     \\           ",
-  "   / ^ . ^ \\          ",
-  "  (   >Y<   )         ",
-  "   \\  `-'  /          ",
-  "    |     |           ",
-  "    /|   |\\           ",
-  "   (_|   |_)          ",
-]
-
-// Use a nice recognizable sitting/walking cat (larger)
-
-const GINGER_1 = [
-  "              /|  /|            ",
-  "             / | / |            ",
-  "            /  |/  |            ",
-  "      _____|       |_____       ",
-  "     /     |  O  O |     \\      ",
-  "    |      |   __  |      |     ",
-  "    |      |  /  \\ |      |     ",
-  "    |       \\ \\__/ /       |    ",
-  "     \\_____  \\____/  _____/     ",
-  "           |  |  |  |           ",
-  "           |  |  |  |           ",
-  "           |__|  |__|           ",
-  "           (__/  \\__)      ~    ",
-]
-
-const GINGER_2 = [
-  "              /|  /|            ",
-  "             / | / |            ",
-  "            /  |/  |            ",
-  "      _____|       |_____       ",
-  "     /     |  -  O |     \\      ",
-  "    |      |   __  |      |     ",
-  "    |      |  /  \\ |      |     ",
-  "    |       \\ \\__/ /       |    ",
-  "     \\_____  \\____/  _____/     ",
-  "           | |   | |            ",
-  "           | |   | |            ",
-  "           |_|   |_|            ",
-  "          (__/   \\__)    ~      ",
-]
-
-const GINGER_3 = [
-  "              /|  /|            ",
-  "             / | / |            ",
-  "            /  |/  |            ",
-  "      _____|       |_____       ",
-  "     /     |  O  O |     \\      ",
-  "    |      |   __  |      |     ",
-  "    |      |  \\__/ |      |     ",
-  "    |       \\      /       |    ",
-  "     \\_____  \\____/  _____/     ",
-  "          |  |   |  |           ",
-  "          |  |   |  |           ",
-  "          |__|   |__|           ",
-  "          (__/   \\__)       ~   ",
-]
-
-const GINGER_4 = [
-  "              /|  /|            ",
-  "             / | / |            ",
-  "            /  |/  |            ",
-  "      _____|       |_____       ",
-  "     /     |  O  - |     \\      ",
-  "    |      |   __  |      |     ",
-  "    |      |  /  \\ |      |     ",
-  "    |       \\ \\__/ /       |    ",
-  "     \\_____  \\____/  _____/     ",
-  "           |  | |  |            ",
-  "           |  | |  |            ",
-  "           |__| |__|            ",
-  "           (__/ \\__)     ~      ",
-]
-
-const CAT_FRAMES = [GINGER_1, GINGER_2, GINGER_3, GINGER_4]
-const CAT_WIDTH = 32
+const CAT_WIDTH = Math.max(
+  ...CAT_FRAMES.flatMap((frame) => frame.map((line) => trimmedWidth(line)))
+)
 
 export function GingerCat() {
   const { width } = useTerminalDimensions()
   const [xOffset, setXOffset] = useState(0)
   const [frameIndex, setFrameIndex] = useState(0)
+  const [direction, setDirection] = useState<1 | -1>(1)
 
   // Frame animation - cycle walk frames
   useEffect(() => {
@@ -158,23 +66,62 @@ export function GingerCat() {
     return () => clearInterval(interval)
   }, [])
 
-  // Position animation - cat walks left to right, wraps around
+  // Position animation - cat loops from left to right
   useEffect(() => {
-    const totalTravel = width + CAT_WIDTH
-    let pos = 0
+    const leftEdge = -CAT_WIDTH
+    let pos = leftEdge
+
     const interval = setInterval(() => {
-      pos = (pos + 1) % totalTravel
-      setXOffset(pos - CAT_WIDTH)
-    }, 120)
+      pos += 1
+      if (pos > width) {
+        pos = leftEdge
+      }
+      setXOffset(pos)
+    }, 90)
     return () => clearInterval(interval)
   }, [width])
 
   const currentFrame = CAT_FRAMES[frameIndex]
 
-  // Pad each line to position the cat horizontally
-  const padAmount = Math.max(0, xOffset)
-  const pad = " ".repeat(padAmount)
-  const catArt = currentFrame.map((line) => pad + line).join("\n")
+  const mirrorLine = (line: string) => {
+    const swaps: Record<string, string> = {
+      "/": "\\",
+      "\\": "/",
+      "(": ")",
+      ")": "(",
+      "<": ">",
+      ">": "<",
+      "|": "|",
+      "▓": "▓",
+      "⋈": "⋈",
+      "_": "_",
+    }
+    return line
+      .split("")
+      .reverse()
+      .map((ch) => swaps[ch] ?? ch)
+      .join("")
+  }
+
+  const displayFrame =
+    direction === 1 ? currentFrame : currentFrame.map((line) => mirrorLine(line))
+
+  const renderLine = (line: string) => {
+    if (width <= 0) return ""
+    const trimmed = line.replace(/\s+$/u, "")
+    if (xOffset >= width) return ""
+
+    if (xOffset < 0) {
+      const visible = trimmed.slice(-xOffset)
+      return visible.slice(0, width)
+    }
+
+    const pad = " ".repeat(xOffset)
+    const full = pad + trimmed
+    return full.length > width ? full.slice(0, width) : full
+  }
+
+  const catArt = displayFrame.map((line) => renderLine(line)).join("\n")
 
   return (
     <box width="100%" flexGrow={1} flexDirection="column" justifyContent="center">

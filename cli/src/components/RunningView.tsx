@@ -8,6 +8,8 @@ export function RunningView() {
       flexGrow={1}
       flexDirection="column"
       gap={1}
+      paddingBottom={1}
+      paddingTop={1}
     >
       <StatusPanel />
       <LogPanel />
