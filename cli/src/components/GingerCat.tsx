@@ -1,127 +1,38 @@
-import { useState, useEffect } from "react"
+import { readFileSync } from "node:fs"
 import { useTerminalDimensions } from "@opentui/react"
 
-// Cat butler with tuxedo - walking frames
-const BUTLER_WALK_1 = [
-  "  /\\_/\\",
-  " ( o.o )",
-  "  > ⋈ <  ",
-  " /| ▓ |\\ ",
-  "( | ▓ | )",
-  " /  ▓  \\",
-  "(__|▓|__)",
-]
+function normalizeAsciiArt(raw: string): string[] {
+  const lines = raw.replace(/\r\n/g, "\n").split("\n")
 
-const BUTLER_WALK_2 = [
-  "  /\\_/\\",
-  " ( o.o )",
-  "  > ⋈ <",
-  "  | ▓ |\\",
-  " (| ▓ | )",
-  "  / ▓  \\",
-  " (__|▓|__)",
-]
+  while (lines.length > 0 && lines[0].trim().length === 0) lines.shift()
+  while (lines.length > 0 && lines[lines.length - 1].trim().length === 0) {
+    lines.pop()
+  }
 
-const BUTLER_WALK_3 = [
-  "  /\\_/\\",
-  " ( -.- )",
-  "  > ⋈ <",
-  " /| ▓ |\\",
-  "( | ▓ | )",
-  " /  ▓  \\",
-  "(__|▓|__)",
-]
+  const indents = lines
+    .filter((line) => line.trim().length > 0)
+    .map((line) => (line.match(/^ */u)?.[0].length ?? 0))
+  const minIndent = indents.length > 0 ? Math.min(...indents) : 0
 
-const BUTLER_WALK_4 = [
-  "  /\\_/\\",
-  " ( o.o )",
-  "  > ⋈ <",
-  " /| ▓ |",
-  "( | ▓ |)",
-  "  \\ ▓  \\",
-  "  (__|▓|__)",
-]
-
-const CAT_FRAMES = [BUTLER_WALK_1, BUTLER_WALK_2, BUTLER_WALK_3, BUTLER_WALK_4]
-
-function trimmedWidth(line: string): number {
-  return line.replace(/\s+$/u, "").length
+  return lines.map((line) => line.slice(minIndent).replace(/\s+$/u, ""))
 }
 
-const CAT_WIDTH = Math.max(
-  ...CAT_FRAMES.flatMap((frame) => frame.map((line) => trimmedWidth(line)))
+const TABBY_ART = normalizeAsciiArt(
+  readFileSync(new URL("../../assets/tabby.txt", import.meta.url), "utf8")
 )
+const ART_WIDTH = Math.max(0, ...TABBY_ART.map((line) => line.length))
 
 export function GingerCat() {
   const { width } = useTerminalDimensions()
-  const [xOffset, setXOffset] = useState(0)
-  const [frameIndex, setFrameIndex] = useState(0)
-  const [direction, setDirection] = useState<1 | -1>(1)
-
-  // Frame animation - cycle walk frames
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFrameIndex((f) => (f + 1) % CAT_FRAMES.length)
-    }, 400)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Position animation - cat loops from left to right
-  useEffect(() => {
-    const leftEdge = -CAT_WIDTH
-    let pos = leftEdge
-
-    const interval = setInterval(() => {
-      pos += 1
-      if (pos > width) {
-        pos = leftEdge
-      }
-      setXOffset(pos)
-    }, 90)
-    return () => clearInterval(interval)
-  }, [width])
-
-  const currentFrame = CAT_FRAMES[frameIndex]
-
-  const mirrorLine = (line: string) => {
-    const swaps: Record<string, string> = {
-      "/": "\\",
-      "\\": "/",
-      "(": ")",
-      ")": "(",
-      "<": ">",
-      ">": "<",
-      "|": "|",
-      "▓": "▓",
-      "⋈": "⋈",
-      "_": "_",
-    }
-    return line
-      .split("")
-      .reverse()
-      .map((ch) => swaps[ch] ?? ch)
-      .join("")
-  }
-
-  const displayFrame =
-    direction === 1 ? currentFrame : currentFrame.map((line) => mirrorLine(line))
 
   const renderLine = (line: string) => {
     if (width <= 0) return ""
-    const trimmed = line.replace(/\s+$/u, "")
-    if (xOffset >= width) return ""
-
-    if (xOffset < 0) {
-      const visible = trimmed.slice(-xOffset)
-      return visible.slice(0, width)
-    }
-
-    const pad = " ".repeat(xOffset)
-    const full = pad + trimmed
-    return full.length > width ? full.slice(0, width) : full
+    if (width <= ART_WIDTH) return line.slice(0, width)
+    const leftPad = Math.floor((width - ART_WIDTH) / 2)
+    return `${" ".repeat(leftPad)}${line}`
   }
 
-  const catArt = displayFrame.map((line) => renderLine(line)).join("\n")
+  const catArt = TABBY_ART.map((line) => renderLine(line)).join("\n")
 
   return (
     <box width="100%" flexGrow={1} flexDirection="column" justifyContent="center">

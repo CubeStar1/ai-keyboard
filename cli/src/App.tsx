@@ -10,7 +10,7 @@ import { stopAll } from "./services/process-manager"
 
 function Header() {
   return (
-    <box width="100%" justifyContent="center" paddingTop={1} paddingBottom={1}>
+    <box width="100%" justifyContent="center" paddingTop={3} paddingBottom={1}>
       <box flexDirection="column" alignItems="center">
         <ascii-font text="TABBY" font="block" color="#FF8C42" />
         <text>
