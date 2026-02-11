@@ -1,6 +1,6 @@
 # AI Keyboard
 
-> An intelligent keyboard layer that transforms your input device into a real-time AI collaborator for coding interviews and beyond.
+An intelligent keyboard layer that transforms your input device into a real-time AI collaborator for coding interviews and beyond.
 
 ## What is AI Keyboard?
 
