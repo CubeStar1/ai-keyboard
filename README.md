@@ -333,7 +333,6 @@ ai-keyboard/
 | `Alt+Shift+X`  | Copilot    | Update with new constraints |
 | `Alt+N`        | Copilot    | Code suggestions            |
 | `Ctrl+1-6`     | Copilot    | Switch tabs                 |
-| `Ctrl+N`       | Copilot    | New conversation            |
 | `Ctrl+Arrow`   | Any window | Move floating window        |
 | `Esc`          | Any panel  | Back/close                  |
 | `Enter`        | Result     | Accept & paste              |
