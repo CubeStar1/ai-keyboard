@@ -77,7 +77,7 @@ AI Keyboard is a **system-wide AI assistant** that lives at the point of input. 
 
 | Layer              | Technology                                 |
 | ------------------ | ------------------------------------------ |
-| Desktop App        | Electron                                   |
+| Desktop App        | Electron 38                                  |
 | Frontend           | Next.js 15, React 19, Tailwind CSS         |
 | AI                 | Vercel AI SDK, OpenAI/Groq/Cerebras        |
 | Memory             | Mem0 (Supabase vector store + Neo4j graph) |
