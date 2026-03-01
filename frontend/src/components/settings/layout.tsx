@@ -9,6 +9,7 @@ import { MemoryTab } from "./memory-tab";
 import { GraphTab } from "./graph-tab";
 import { AccountTab } from "./account-tab";
 import { ShortcutsTab } from "./shortcuts-tab";
+import { ToolsetsTab } from "./toolsets-tab";
 import {
   Settings,
   Keyboard,
@@ -18,6 +19,7 @@ import {
   User,
   Info,
   LogOut,
+  Blocks,
 } from "lucide-react";
 
 const appName = process.env.NEXT_PUBLIC_APP_NAME || "Tabby";
@@ -65,6 +67,12 @@ const navItems: NavItem[] = [
     label: "Account",
     description: "User profile",
     icon: <User className="w-4 h-4" />,
+  },
+  {
+    id: "toolsets",
+    label: "Toolsets",
+    description: "Manage tool presets",
+    icon: <Blocks className="w-4 h-4" />,
   },
   {
     id: "about",
@@ -134,6 +142,8 @@ export function SettingsLayout() {
         return <GraphTab />;
       case "account":
         return <AccountTab />;
+      case "toolsets":
+        return <ToolsetsTab />;
       case "about":
         return <AboutTab />;
       default:
