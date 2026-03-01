@@ -1,10 +1,10 @@
-# AI Keyboard
+# Tabby - AI Keyboard
 
 An intelligent keyboard layer that transforms your input device into a real-time AI collaborator for coding interviews and beyond.
 
-## What is AI Keyboard?
+## What is Tabby?
 
-AI Keyboard is a **system-wide AI assistant** that lives at the point of input. Instead of switching between apps for AI help, it provides:
+Tabby is a **system-wide AI assistant** that lives at the point of input. Instead of switching between apps for AI help, it provides:
 
 - **Interview Copilot** - Real-time coding interview assistance with screen capture
 - **Context-Aware Autocomplete** - AI suggestions based on what you're typing
@@ -77,7 +77,7 @@ AI Keyboard is a **system-wide AI assistant** that lives at the point of input. 
 
 | Layer              | Technology                                 |
 | ------------------ | ------------------------------------------ |
-| Desktop App        | Electron 38                                  |
+| Desktop App        | Electron 38                                |
 | Frontend           | Next.js 15, React 19, Tailwind CSS         |
 | AI                 | Vercel AI SDK, OpenAI/Groq/Cerebras        |
 | Memory             | Mem0 (Supabase vector store + Neo4j graph) |
