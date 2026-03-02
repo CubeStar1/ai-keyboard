@@ -2,7 +2,7 @@ import { keyboard, Key } from "@nut-tree-fork/nut-js";
 import { clipboard } from "electron";
 import { windowManager } from "node-window-manager";
 
-keyboard.config.autoDelayMs = 5;
+keyboard.config.autoDelayMs = 0;
 
 let lastActiveWindowId: number | null = null;
 let isTypingCancelled = false;
@@ -114,8 +114,8 @@ interface HumanTypingConfig {
 
 const DEFAULT_HUMAN_CONFIG: HumanTypingConfig = {
   errorRate: 0.03,
-  minDelay: 20,
-  maxDelay: 100,
+  minDelay: 1,
+  maxDelay: 5,
   punctuationPauseMin: 150,
   punctuationPauseMax: 400,
   spacePauseMin: 30,
@@ -164,7 +164,7 @@ export async function typeSimpleToLastWindow(
     if (char === '\n') {
       await keyboard.pressKey(Key.Enter);
       await keyboard.releaseKey(Key.Enter);
-      await sleep(randomInRange(50, 150));
+      await sleep(cfg.minDelay);
       continue;
     }
 
@@ -173,41 +173,11 @@ export async function typeSimpleToLastWindow(
       continue; // Skip \r, the \n will handle the newline
     }
 
-    // Decide if we make a typo
-    if (shouldMakeTypo(char, cfg.errorRate)) {
-      const typoChar = getRandomNeighborChar(char);
-
-      // Type the wrong character
-      await keyboard.type(typoChar);
-
-      // Human-like pause before realizing the mistake
-      await sleep(randomInRange(cfg.correctionPauseMin, cfg.correctionPauseMax));
-
-      // Backspace to correct
-      await keyboard.pressKey(Key.Backspace);
-      await keyboard.releaseKey(Key.Backspace);
-
-      // Small pause after correction
-      await sleep(randomInRange(cfg.postCorrectionPauseMin, cfg.postCorrectionPauseMax));
-    }
-
     // Type the correct character
     await keyboard.type(char);
 
-    // Calculate variable delay (jitter)
-    let delay = randomInRange(cfg.minDelay, cfg.maxDelay);
-
-    // Add thinking pause after punctuation
-    if (/[.,!?;:]/.test(char)) {
-      delay += randomInRange(cfg.punctuationPauseMin, cfg.punctuationPauseMax);
-    }
-
-    // Add slight pause after space (word boundary)
-    if (char === ' ') {
-      delay += randomInRange(cfg.spacePauseMin, cfg.spacePauseMax);
-    }
-
-    await sleep(delay);
+    // Constant delay
+    await sleep(cfg.minDelay);
 
     if (isTypingCancelled) return;
   }
@@ -235,63 +205,33 @@ export async function typeLeetCodeToLastWindow(
     if (i > 0) {
       await keyboard.pressKey(Key.Enter);
       await keyboard.releaseKey(Key.Enter);
-      await sleep(randomInRange(50, 150)); // Wait for auto-indent
+      await sleep(cfg.minDelay); // Wait for auto-indent
 
       // 2. HARD RESET: Move to start of line and delete any auto-indented content
       // Press Home to go to the beginning of the line
       await keyboard.pressKey(Key.Home);
       await keyboard.releaseKey(Key.Home);
-      await sleep(randomInRange(20, 50));
+      await sleep(cfg.minDelay);
 
       // Select any auto-indented whitespace with Shift+End
       await keyboard.pressKey(Key.LeftShift, Key.End);
       await keyboard.releaseKey(Key.LeftShift, Key.End);
-      await sleep(randomInRange(20, 50));
+      await sleep(cfg.minDelay);
 
       // Delete the selected content with Backspace
       await keyboard.pressKey(Key.Backspace);
       await keyboard.releaseKey(Key.Backspace);
-      await sleep(randomInRange(20, 50));
+      await sleep(cfg.minDelay);
     }
 
     // 3. Type the FULL line (including original leading spaces)
     // This ensures the indentation is exactly what the source code has
     for (const char of line) {
-      // Decide if we make a typo (only on alphanumeric chars for realism)
-      if (shouldMakeTypo(char, cfg.errorRate)) {
-        const typoChar = getRandomNeighborChar(char);
-
-        // Type the wrong character
-        await keyboard.type(typoChar);
-
-        // Human-like pause before realizing the mistake
-        await sleep(randomInRange(cfg.correctionPauseMin, cfg.correctionPauseMax));
-
-        // Backspace to correct
-        await keyboard.pressKey(Key.Backspace);
-        await keyboard.releaseKey(Key.Backspace);
-
-        // Small pause after correction
-        await sleep(randomInRange(cfg.postCorrectionPauseMin, cfg.postCorrectionPauseMax));
-      }
-
       // Type the correct character
       await keyboard.type(char);
 
-      // Calculate variable delay (jitter)
-      let delay = randomInRange(cfg.minDelay, cfg.maxDelay);
-
-      // Add thinking pause after punctuation
-      if (/[.,!?;:]/.test(char)) {
-        delay += randomInRange(cfg.punctuationPauseMin, cfg.punctuationPauseMax);
-      }
-
-      // Add slight pause after space (word boundary)
-      if (char === ' ') {
-        delay += randomInRange(cfg.spacePauseMin, cfg.spacePauseMax);
-      }
-
-      await sleep(delay);
+      // Constant delay
+      await sleep(cfg.minDelay);
 
       if (isTypingCancelled) return;
     }

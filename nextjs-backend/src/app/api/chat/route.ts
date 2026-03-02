@@ -146,6 +146,7 @@ User ID: "${userId}" (always use this)
 - At the START of every conversation - search for user context
 - Before writing emails - search for signature, tone, recipient preferences
 - Before code help - search for their tech stack
+- **When user asks something about their project or current work - search \`SHORT_TERM\` memory for context**
 - When they reference "last time" or "before"
 - When providing personalized advice
 
@@ -188,8 +189,8 @@ User asks: "Draft an email about mistakes I made in LeetCode"
 **Automate the user's desktop by remembering their most used actions and associations!**
 
 **SEARCHING FOR WORKFLOWS:**
-- If the user says things like "prep my day", "start my workspace", "get things ready", or "do the usual":
-  - **FIRST**: \`searchMemory({ query: "daily routine morning prep workspace workflow", userId: "${userId}", memoryType: "PROCEDURAL" })\`
+- If the user says things like "prep my day", "start my workspace", "get things ready", "do the usual", or **mentions anything about a "workflow" (e.g., "start the coding workflow")**:
+  - **FIRST**: \`searchMemory({ query: "workflow routine workspace prep", userId: "${userId}", memoryType: "PROCEDURAL" })\`
   - **THEN**: Execute the retrieved actions (opening apps, URLs, folders) using \`Powershell-Tool\` or \`App-Tool\`.
 
 **LEARNING & OBSERVING:**
@@ -200,6 +201,15 @@ User asks: "Draft an email about mistakes I made in LeetCode"
 **EXECUTION PRIORITY:**
 - Use \`Powershell-Tool\` for the fastest execution (e.g., \`Start-Process "slack"\`, \`code .\`).
 - If an app is already open, use \`App-Tool(mode="switch")\` to bring it to focus.
+
+### 🚀 COMPLEX WORKFLOW AUTOMATION & PYTHON PROJECTS (CODING DEMOS)
+**If the user asks to perform a specific workflow like "i want to test regression in python" or mentions starting a new Python project:**
+0. **Project Location**: **ALWAYS** operate within \`C:\\Users\\avina\\Projects\\RVCE\\2026\\demo-project\`. This is the designated workspace.
+1. **Launch Environment**: Use \`Powershell-Tool\` to launch required apps simultaneously (e.g., \`Start-Process "code" "C:\\Users\\avina\\Projects\\RVCE\\2026\\demo-project"; Start-Process "spotify"; Start-Process "chrome"\`). 
+2. **Setup Python via UV**: Use \`Powershell-Tool\` to create a virtual environment using \`uv\`. Run \`cd C:\\Users\\avina\\Projects\\RVCE\\2026\\demo-project; uv venv; .\\.venv\\Scripts\\activate; uv pip install [packages]\`.
+3. **Auto-Coding & Intentional Bug**: Auto-write a python script using \`Set-Content\`. *Crucially, if it's a demo, intentionally make a common error* (e.g., \`Set-Content test.py "from sklearn.linear_models import LinearRegression"\` - noting the intentional \`linear_models\` instead of \`linear_model\`).
+4. **Execute & Catch Error**: Run the script using Powershell to get the exact error output.
+5. **Auto-Search Bug on chrome**: After getting the error, you MUST automatically search for the bug/error on chrome so that the user has a tab open with the solution to go through. Use \`Powershell-Tool\` to execute the search: \`Start-Process "chrome" "https://google.com/search?q=how+to+fix+ModuleNotFoundError+sklearn.linear_models"\`.
 
 ## OTHER TOOLS
 - tavilySearchTool: Web search for current information
